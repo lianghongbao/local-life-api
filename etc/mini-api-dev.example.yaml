@@ -1,0 +1,102 @@
+# ============================================================
+# 开发环境配置模板
+# ============================================================
+# 用法:
+#   1. cp etc/mini-api-dev.example.yaml etc/mini-api-dev.local.yaml
+#   2. 在 etc/mini-api-dev.local.yaml 里填真实值
+#   3. 启动:GO_CONFIG_FILE=etc/mini-api-dev.local.yaml go run .
+#
+# mini-api-dev.yaml 是默认值,可入库
+# mini-api-dev.local.yaml 是个性覆盖,需 .gitignore
+
+Name: mini-api
+Host: 0.0.0.0
+Port: 8888
+EnableGzip: true
+
+DB:
+  DataSource: ${DB_DATASOURCE:-root:123456@tcp(127.0.0.1:3306)/local_life?charset=utf8mb4&parseTime=True&loc=Local}
+  Policy: round-robin
+
+CacheRedis:
+  - Host: ${REDIS_HOST:-127.0.0.1:6379}
+    Type: node
+    Pass: ${REDIS_PASS:-}
+    Weight: 100
+
+Auth:
+  AccessSecret: "${AUTH_ACCESS_SECRET:-dev-auth-secret-CHANGE-ME}"
+  AccessExpire: 7200
+
+AdminAuth:
+  AccessSecret: "${ADMIN_AUTH_SECRET:-dev-admin-secret-CHANGE-ME}"
+  AccessExpire: 7200
+
+RefreshSecret: "${REFRESH_SECRET:-dev-refresh-secret-CHANGE-ME}"
+RefreshExpire: 604800
+
+WxMini:
+  AppID: "${WX_APP_ID}"
+  AppSecret: "${WX_APP_SECRET}"
+
+OSS:
+  Endpoint:        "${OSS_ENDPOINT}"
+  Bucket:          "${OSS_BUCKET}"
+  Region:          "${OSS_REGION}"
+  AccessKeyID:     "${OSS_ACCESS_KEY_ID}"
+  AccessKeySecret: "${OSS_ACCESS_KEY_SECRET}"
+  RoleArn:         "${OSS_ROLE_ARN}"
+  # SignURLExpire:   3600
+  # UploadHost: 上传目标(OSS bucket 域名),CDN 不支持上传
+  UploadHost:      "${OSS_UPLOAD_HOST:-}"
+  # URLPrefix: 访问前缀(CDN 域名),入库 URL 和业务返回 URL 均使用此前缀
+  URLPrefix:       "${OSS_URL_PREFIX:-}"
+  Hosts:
+    - "${OSS_ALLOWED_HOST}"
+
+MiniApp:
+  MaxImagesPerPost: 9
+  DefaultPageSize: 10
+  MaxPageSize: 50
+
+Log:
+  ServiceName: mini-api
+  Mode: file
+  Path: logs
+  Level: info
+  Encoding: json
+  Compress: true
+  MaxSize: 100
+  MaxBackups: 10
+  KeepDays: 7
+  Rotation: daily
+  Stat: false
+
+Cors:
+  Enabled: true
+  AllowOrigins:
+    - "http://localhost:8080"
+    - "http://127.0.0.1:5174"
+  AllowMethods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - PATCH
+    - OPTIONS
+  AllowHeaders:
+    - Origin
+    - Content-Type
+    - Authorization
+    - X-Requested-With
+  ExposeHeaders:
+    - Content-Length
+  AllowCredentials: true
+  MaxAge: 86400
+
+# ============================================================
+# 腾讯位置服务(reverse geocoding)
+# ============================================================
+# 申请地址:https://lbs.qq.com/webservice_v1/guide-geocoder
+TencentMap:
+  Key: TENCENT_MAP_KEY_PLACEHOLDER

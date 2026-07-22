@@ -1,0 +1,18 @@
+// 通用基础类型
+// 按 go-zero 规范：被引入的 api 文件中不允许出现 service 语法块
+
+type IdRequest {
+    Id int64 `path:"id"`
+}
+
+type PageRequest {
+    Page     int `form:"page,default=1"`
+    PageSize int `form:"page_size,default=10,range=[1:50]"`
+}
+
+// EmptyResponse 空响应占位（用于"创建/删除/下架/审核"等无业务数据的接口）
+//   - 实际响应由 common/response.ErrorHandler 统一处理
+//   - 成功 → {code:0, msg:"ok", data:null}
+//   - 业务错误 → {code:xxx, msg:"xxx", data:null}
+type EmptyResponse {
+}

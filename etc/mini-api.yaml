@@ -1,0 +1,109 @@
+Name: mini-api
+Host: 0.0.0.0
+Port: 8888
+
+EnableGzip: true
+
+# ============================================================
+# MySQL
+# ============================================================
+DB:
+  DataSource: ${DB_DATASOURCE}
+  Policy: round-robin
+
+# ============================================================
+# Redis
+# ============================================================
+CacheRedis:
+  - Host: ${REDIS_HOST}
+    Type: node
+    Pass: ${REDIS_PASSWORD}
+    Weight: 100
+
+# ============================================================
+# JWT
+# ============================================================
+Auth:
+  AccessSecret: "${AUTH_ACCESS_SECRET}"
+  AccessExpire: 7200
+
+AdminAuth:
+  AccessSecret: "${ADMIN_AUTH_SECRET}"
+  AccessExpire: 7200
+
+RefreshSecret: "${REFRESH_SECRET}"
+RefreshExpire: 604800
+
+# ============================================================
+# 微信小程序
+# ============================================================
+WxMini:
+  AppID: "${WX_APP_ID}"
+  AppSecret: "${WX_APP_SECRET}"
+
+# ============================================================
+# 阿里云 OSS
+# ============================================================
+OSS:
+  Endpoint:        "${OSS_ENDPOINT}"
+  Bucket:          "${OSS_BUCKET}"
+  Region:          "${OSS_REGION}"
+  AccessKeyID:     "${OSS_ACCESS_KEY_ID}"
+  AccessKeySecret: "${OSS_ACCESS_KEY_SECRET}"
+  RoleArn:         "${OSS_ROLE_ARN}"
+  UploadHost:      "${OSS_UPLOAD_HOST}"
+  URLPrefix:       "${OSS_URL_PREFIX}"
+  Hosts:
+    - "${OSS_ALLOWED_HOST}"
+
+# ============================================================
+# 业务配置
+# ============================================================
+MiniApp:
+  MaxImagesPerPost: 9
+  DefaultPageSize: 10
+  MaxPageSize: 50
+
+# ============================================================
+# 日志配置
+# ============================================================
+Log:
+  ServiceName: mini-api
+  Mode: file
+  Path: /data/logs/mini-api
+  Level: info
+  Encoding: json
+  Compress: true
+  MaxSize: 100
+  MaxBackups: 10
+  KeepDays: 7
+  Rotation: daily
+  Stat: false
+
+# ============================================================
+# CORS
+# ============================================================
+Cors:
+  Enabled: false
+  AllowOrigins: []
+  AllowMethods: []
+  AllowHeaders: []
+  ExposeHeaders: []
+  AllowCredentials: false
+  MaxAge: 86400
+
+# ============================================================
+# 腾讯位置服务(reverse geocoding)
+# ============================================================
+# 申请地址:https://lbs.qq.com/webservice_v1/guide-geocoder
+TencentMap:
+  Key: ${TENCENT_MAP_KEY}
+
+# ============================================================
+# 评论系统配置
+# ============================================================
+CommentLimit:
+  CreatePerMin: 10
+  LikePerMin: 60
+  ReportPerHour: 10
+ReportThreshold: 3

@@ -1,0 +1,91 @@
+// 地理位置模块:reverse geocoding + 区域列表 + 街道列表 + 城市列表
+type GeoReverseReq {
+	Lat float64 `form:"lat,optional"` // 必填,小数 6 位以内
+	Lng float64 `form:"lng,optional"` // 必填
+}
+
+type GeoReverseResp {
+	CityAdcode       string `json:"city_adcode"` // 国标 6 位,失败时 ""
+	CityName         string `json:"city_name"` // 失败时 ""
+	AreaAdcode       string `json:"area_adcode"` // 国标 6 位
+	AreaName         string `json:"area_name"`
+	StreetName       string `json:"street_name"`
+	FormattedAddress string `json:"formatted_address"` // 冗余,UI 备用
+}
+
+type GeoAreaItem {
+	AreaAdcode string `json:"area_adcode"`
+	AreaName   string `json:"area_name"`
+	CityAdcode string `json:"city_adcode,omitempty"` // 跨城市搜索结果带上市 adcode
+	CityName   string `json:"city_name,omitempty"`
+	PostCount  int    `json:"post_count"`
+	ShopCount  int    `json:"shop_count"`
+}
+
+type GeoAreasReq {
+	CityAdcode string `form:"city_adcode,optional"` // 可选:不传则返回全国热门区(按聚合数)
+	Keyword    string `form:"keyword,optional"` // 可选:区名模糊搜索
+	Limit      int    `form:"limit,optional"` // 默认 50,搜索时建议 20
+}
+
+type GeoAreasResp {
+	Items []GeoAreaItem `json:"items"`
+}
+
+type GeoStreetItem {
+	StreetName string `json:"street_name"`
+	PostCount  int    `json:"post_count"`
+	ShopCount  int    `json:"shop_count"`
+}
+
+type GeoStreetsReq {
+	AreaAdcode string `form:"area_adcode,optional"` // 必填
+}
+
+type GeoStreetsResp {
+	Items []GeoStreetItem `json:"items"`
+}
+
+// 城市列表(用于未定位时让用户选城市)
+type GeoCityItem {
+	CityAdcode string `json:"city_adcode"`
+	CityName   string `json:"city_name"`
+	AreaCount  int    `json:"area_count"` // 该城市下有内容的区数
+	PostCount  int    `json:"post_count"` // 该城市帖子数
+	ShopCount  int    `json:"shop_count"` // 该城市商家数
+}
+
+type GeoCitiesReq {
+	Keyword string `form:"keyword,optional"` // 城市名模糊搜索
+	Limit   int    `form:"limit,optional"` // 默认 50
+}
+
+type GeoCitiesResp {
+	Items []GeoCityItem `json:"items"`
+}
+
+@server (
+	group:  user
+	prefix: /api/v1
+)
+service mini-api {
+	// 逆地址解析:经纬度 -> 城市/区域/街道
+	@handler GeoReverse
+	get /geo/reverse (GeoReverseReq) returns (GeoReverseResp)
+
+	// 区域的列表
+	//   - 有 city_adcode → 该城市下的区
+	//   - 无 city_adcode + 无 keyword → 全国热门区(按聚合数)
+	//   - 有 keyword → 区名模糊搜索(可跨城市)
+	@handler GeoAreas
+	get /geo/areas (GeoAreasReq) returns (GeoAreasResp)
+
+	// 区域的街道列表(按 street_name),附带 post/shop 计数
+	@handler GeoStreets
+	get /geo/streets (GeoStreetsReq) returns (GeoStreetsResp)
+
+	// 城市列表(用于未定位时让用户选城市)
+	@handler GeoCities
+	get /geo/cities (GeoCitiesReq) returns (GeoCitiesResp)
+}
+

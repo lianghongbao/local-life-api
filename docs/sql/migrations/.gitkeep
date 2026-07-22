@@ -1,0 +1,15 @@
+# 此文件夹为迁移脚本占位
+
+`init.sql` 已包含当前完整的 schema。
+
+新增 migration:
+
+```
+migrations/YYYY-MM-DD-<description>.sql
+```
+
+要求:
+
+- 文件名 `YYYY-MM-DD-<kebab-case-描述>.sql`(例:`2027-03-15-add-shop-cert-no.sql`)
+- 一个文件只做一类 schema 变更
+- 写完之后**把同样的变更也合并进 `init.sql`**,保证新环境跑 init.sql 跟上生产结构

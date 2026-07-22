@@ -1,0 +1,46 @@
+// 管理后台账号模块类型定义（admin account 管理）
+//   - 与 AdminLoginRequest/Response 区分（user.api 里那些是小程序用户管理的类型）
+//   - 这里管理的是 admin 表的账号本身（增/改/删/改密码/启停）
+
+import "base.api"
+
+// AdminAccountItem 后台账号列表/详情行
+type AdminAccountItem {
+    Id        int64  `json:"id"`
+    Username  string `json:"username"`
+    Role      int    `json:"role"`       // 1超级管理员(预留多角色)
+    Status    int    `json:"status"`     // 1正常 2禁用
+    CreatedAt string `json:"created_at"`
+    UpdatedAt string `json:"updated_at"`
+}
+
+type AdminAccountListResponse {
+    List  []AdminAccountItem `json:"list"`
+    Total int64              `json:"total"`
+}
+
+// AdminAccountCreateReq 创建账号
+//   - password 必填,后端 bcrypt 加密入库
+//   - role/status 默认值由 types 的 json default 兜底
+type AdminAccountCreateReq {
+    Username string `json:"username" validate:"required,max=32"`
+    Password string `json:"password" validate:"required,min=8,max=128"`
+    Role     int    `json:"role,default=1,options=1"`        // 当前仅支持超管
+    Status   int    `json:"status,default=1,options=1|2"`    // 1正常 2禁用
+}
+
+// AdminAccountUpdateReq 更新账号(role/status 可改,username 不允许改避免破坏审计)
+//   - password 在此接口不动,改密码走专门的 ChangePassword
+type AdminAccountUpdateReq {
+    IdRequest
+    Role   int `json:"role,default=1,options=1"`
+    Status int `json:"status,default=1,options=1|2"`
+}
+
+// AdminAccountChangePasswordReq 重置/修改密码
+//   - 不需要传旧密码(超管场景下就是"重置")
+//   - 强制 min=8
+type AdminAccountChangePasswordReq {
+    IdRequest
+    Password string `json:"password" validate:"required,min=8,max=128"`
+}

@@ -1,0 +1,31 @@
+// 公告模块类型定义
+
+import "base.api"
+
+type NoticeItem {
+    Id        int64  `json:"id"`
+    Title     string `json:"title"`
+    Content   string `json:"content"`
+    IsTop     int    `json:"is_top"`
+    Status    int    `json:"status"`
+    CreatedAt string `json:"created_at"`
+    UpdatedAt string `json:"updated_at"`
+}
+
+type NoticeListResponse {
+    List  []NoticeItem `json:"list"`
+    Total int64        `json:"total"`
+}
+
+type NoticeCreateRequest {
+    Title   string `json:"title" validate:"required,max=128"`
+    Content string `json:"content" validate:"required"`
+    IsTop   int    `json:"is_top,default=0,options=0|1"`
+}
+
+type NoticeUpdateRequest {
+    IdRequest
+    Title   string `json:"title" validate:"required,max=128"`
+    Content string `json:"content" validate:"required"`
+    IsTop   int    `json:"is_top,default=0,options=0|1"`
+}

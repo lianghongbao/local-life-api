@@ -1,0 +1,91 @@
+// 评论管理后台 API（feed 级，独立于举报队列）
+//   - 一级评论列表 + 二级回复列表 + 状态改动
+//   - 三接口都走 admin 鉴权（prefix=/api/v1/admin，group=admin）
+syntax = "v1"
+
+info (
+	title: "评论管理后台 API（feed 级）"
+	desc:  "直接管理 comment 表,与 admin_comment.api 举报队列分离"
+)
+
+import "base.api"
+
+@server (
+	group:  admin
+	prefix: /api/v1/admin
+	jwt:    AdminAuth
+)
+service mini-api {
+	// 一级评论列表
+	@handler AdminCommentFeedList
+	get /comments/feed (AdminCommentFeedListReq) returns (AdminCommentFeedListResp)
+
+	// 一级评论下的二级回复列表
+	@handler AdminCommentFeedReplies
+	get /comments/:comment_id/replies (AdminCommentFeedRepliesReq) returns (AdminCommentFeedRepliesResp)
+
+	// 改动单条评论状态
+	@handler AdminCommentFeedChangeStatus
+	post /comments/:comment_id/status (AdminCommentFeedChangeStatusReq) returns (AdminCommentFeedChangeStatusResp)
+}
+
+type AdminCommentFeedListReq {
+	Page       int    `form:"page,default=1"`
+	PageSize   int    `form:"page_size,default=20"`
+	PostId     int64  `form:"post_id,optional"`
+	AuthorType int    `form:"author_type,default=0,options=[0,1,2]"` // 0=全部 1=user 2=shop
+	Status     int    `form:"status,default=0,options=[0,1,2,3]"` // 0=全部 1=正常 2=已删除 3=审核中
+	Keyword    string `form:"keyword,optional"` // 评论内容模糊搜索
+	DateFrom   string `form:"date_from,optional"` // YYYY-MM-DD
+	DateTo     string `form:"date_to,optional"`
+}
+
+type AdminCommentFeedItem {
+	CommentId    int64  `json:"comment_id"`
+	ParentId     int64  `json:"parent_id"` // 一级=0;二级=一级id
+	ReplyToUid   string `json:"reply_to_uid"` // 二级才有;一级为空
+	ReplyToName  string `json:"reply_to_name"`
+	Content      string `json:"content"`
+	Status       int    `json:"status"` // 1=正常 2=已删除 3=审核中
+	AuthorType   int    `json:"author_type"`
+	AuthorId     string `json:"author_id"`
+	AuthorName   string `json:"author_name"`
+	AuthorAvatar string `json:"author_avatar"`
+	PostId       int64  `json:"post_id"`
+	PostTitle    string `json:"post_title"`
+	ReplyCount   int    `json:"reply_count"` // 一级的二级数;二级永远为 0
+	StatusText   string `json:"status_text"` // "正常"/"已删除"/"审核中"
+}
+
+type AdminCommentFeedListResp {
+	List  []AdminCommentFeedItem `json:"list"`
+	Total int64                  `json:"total"`
+}
+
+type AdminCommentFeedRepliesReq {
+	CommentId int64 `path:"comment_id"`
+	Page      int   `form:"page,default=1"`
+	PageSize  int   `form:"page_size,default=20"`
+}
+
+type AdminCommentFeedRepliesResp {
+	List             []AdminCommentFeedItem `json:"list"`
+	Total            int64                  `json:"total"`
+	RootCtime        string                 `json:"root_ctime"` // 一级时间,Drawer 头部
+	RootContent      string                 `json:"root_content"`
+	RootAuthorName   string                 `json:"root_author_name"`
+	RootAuthorAvatar string                 `json:"root_author_avatar"`
+	RootAuthorType   int                    `json:"root_author_type"`
+	RootStatus       int                    `json:"root_status"`
+}
+
+type AdminCommentFeedChangeStatusReq {
+	CommentId int64  `path:"comment_id"`
+	Action    string `json:"action" validate:"required,oneof=hide restore delete"`
+	Reason    string `json:"reason,optional" validate:"max=500"`
+}
+
+type AdminCommentFeedChangeStatusResp {
+	Ok bool `json:"ok"`
+}
+

@@ -1,0 +1,240 @@
+syntax = "v1"
+
+info (
+	title:   "小城便利贴 API"
+	desc:    "local-life-api - 小城便利贴便民服务平台"
+	author:  "Lambor"
+	version: "v1.0"
+)
+
+// 引入类型定义文件
+import "base.api"
+import "user.api"
+import "notice.api"
+import "post.api"
+import "shop.api"
+import "banner.api"
+import "home.api"
+import "oss.api"
+import "admin.api"
+import "admin_comment.api"
+import "geo.api"
+import "comment.api"
+import "health.api"
+import "admin_comment_feed.api"
+
+// ====================
+// 路由定义
+// ====================
+// --- C端公开接口（无需登录）---
+@server (
+	group:  user
+	prefix: /api/v1
+)
+service mini-api {
+	// 用户
+	@handler Login
+	post /login (LoginRequest) returns (LoginResponse)
+
+	// 公告
+	@handler NoticeList
+	get /notices (PageRequest) returns (NoticeListResponse)
+
+	@handler NoticeDetail
+	get /notices/:id (IdRequest) returns (NoticeItem)
+
+	// 分类信息
+	@handler PostList
+	get /posts (PostListRequest) returns (PostListResponse)
+
+	@handler PostDetail
+	get /posts/:id (IdRequest) returns (PostItem)
+
+	// ===== 评论（公开） =====
+	@handler CommentList
+	get /posts/:post_id/comments (CommentListRequest) returns (CommentListResponse)
+
+	@handler CommentReplies
+	get /posts/:post_id/comments/:root_id/replies (CommentRepliesRequest) returns (CommentListResponse)
+
+	// 黄页
+	@handler ShopList
+	get /shops (ShopListRequest) returns (ShopListResponse)
+
+	@handler ShopDetail
+	get /shops/:id (IdRequest) returns (ShopItem)
+
+	// 首页
+	@handler HomeIndex
+	get /home (HomeRequest) returns (HomeResponse)
+
+	// 首页本地推荐混合流(本地小店 + 用户发帖,view_count × 时间衰减加权)
+	@handler HomeFeed
+	get /home/feed (HomeFeedRequest) returns (HomeFeedResponse)
+}
+
+// --- C端需登录接口 ---
+@server (
+	group:  user
+	prefix: /api/v1
+	jwt:    Auth
+)
+service mini-api {
+	// 用户
+	@handler UserProfile
+	get /user/profile returns (UserProfileResponse)
+
+	@handler UpdateProfile
+	post /user/profile (UpdateProfileRequest) returns (UserProfileResponse)
+
+	// 发布信息（强制登录关联 user_id）
+	@handler PostCreate
+	post /posts (PostCreateRequest) returns (EmptyResponse)
+
+	// 入驻商家（强制登录关联 user_id）
+	@handler ShopCreate
+	post /shops (ShopCreateRequest) returns (EmptyResponse)
+
+	// 编辑自己的商家（更新后回到待审核）
+	@handler ShopUpdate
+	put /shops/:id (ShopUpdateRequest) returns (EmptyResponse)
+
+	// 我的发布
+	@handler MyPostDetail
+	get /user/posts/:id (IdRequest) returns (PostItem)
+
+	@handler MyPosts
+	get /user/posts (PageRequest) returns (PostListResponse)
+
+	// 我的商家
+	@handler MyShops
+	get /user/shops (PageRequest) returns (ShopListResponse)
+
+	// 编辑自己的发布（更新后回到待审核）
+	@handler PostUpdate
+	put /posts/:id (PostUpdateRequest) returns (EmptyResponse)
+
+	// 下架
+	@handler PostOffline
+	put /posts/:id/offline (IdRequest) returns (EmptyResponse)
+
+	// ===== 评论（需登录） =====
+	@handler CommentCreate
+	post /posts/:post_id/comments (CommentCreateRequest) returns (CommentCreateResponse)
+
+	@handler CommentDelete
+	delete /posts/:post_id/comments/:comment_id (CommentDeleteRequest) returns (EmptyResponse)
+
+	@handler CommentLike
+	post /posts/:post_id/comments/:comment_id/like (CommentLikeRequest) returns (CommentLikeResponse)
+
+	@handler CommentReport
+	post /posts/:post_id/comments/:comment_id/report (CommentReportRequest) returns (CommentReportResponse)
+
+	// OSS 获取上传临时凭证（STS + V4 Policy）
+	@handler GetUploadToken
+	post /oss/upload-token (GetUploadTokenRequest) returns (GetUploadTokenResponse)
+}
+
+// --- 管理后台登录（无 jwt）---
+@server (
+	group:  admin
+	prefix: /api/v1/admin
+)
+service mini-api {
+	// 登录
+	@handler AdminLogin
+	post /login (AdminLoginRequest) returns (AdminLoginResponse)
+}
+
+// --- 管理后台业务（需 jwt）---
+@server (
+	group:  admin
+	prefix: /api/v1/admin
+	jwt:    AdminAuth
+)
+service mini-api {
+	// 公告管理
+	@handler NoticeList
+	get /notices (PageRequest) returns (NoticeListResponse)
+
+	@handler NoticeCreate
+	post /notices (NoticeCreateRequest) returns (EmptyResponse)
+
+	@handler NoticeDetail
+	get /notices/:id (IdRequest) returns (NoticeItem)
+
+	@handler NoticeUpdate
+	put /notices/:id (NoticeUpdateRequest) returns (EmptyResponse)
+
+	@handler NoticeDelete
+	delete /notices/:id (IdRequest) returns (EmptyResponse)
+
+	// 信息审核
+	@handler PostAuditList
+	get /posts (PageRequest) returns (PostListResponse)
+
+	@handler PostAudit
+	put /posts/:id/audit (PostAuditRequest) returns (EmptyResponse)
+
+	@handler PostDelete
+	delete /posts/:id (IdRequest) returns (EmptyResponse)
+
+	// 商家审核
+	@handler ShopAuditList
+	get /shops (PageRequest) returns (ShopListResponse)
+
+	@handler ShopAudit
+	put /shops/:id/audit (ShopAuditRequest) returns (EmptyResponse)
+
+	// 轮播图管理
+	@handler BannerList
+	get /banners (PageRequest) returns (BannerListResponse)
+
+	@handler BannerCreate
+	post /banners (BannerCreateRequest) returns (EmptyResponse)
+
+	@handler BannerUpdate
+	put /banners/:id (BannerUpdateRequest) returns (EmptyResponse)
+
+	@handler BannerDelete
+	delete /banners/:id (IdRequest) returns (EmptyResponse)
+
+	// 用户管理
+	@handler AdminUserList
+	get /users (PageRequest) returns (AdminUserListResponse)
+
+	@handler AdminUserDetail
+	get /users/:id (IdRequest) returns (AdminUserDetailResponse)
+
+	@handler AdminUserBan
+	put /users/:id/ban (AdminUserBanRequest) returns (EmptyResponse)
+
+	// 后台账号管理(管理 admin 表的账号本身)
+	@handler AdminAccountList
+	get /accounts (PageRequest) returns (AdminAccountListResponse)
+
+	@handler AdminAccountCreate
+	post /accounts (AdminAccountCreateReq) returns (EmptyResponse)
+
+	@handler AdminAccountUpdate
+	put /accounts/:id (AdminAccountUpdateReq) returns (EmptyResponse)
+
+	@handler AdminAccountChangePassword
+	put /accounts/:id/password (AdminAccountChangePasswordReq) returns (EmptyResponse)
+
+	@handler AdminAccountDelete
+	delete /accounts/:id (IdRequest) returns (EmptyResponse)
+
+	// OSS 上传凭证(后台用,与 C 端共用 logic)
+	@handler AdminGetUploadToken
+	post /oss/upload-token (GetUploadTokenRequest) returns (GetUploadTokenResponse)
+
+	// ===== 评论举报管理 =====
+	@handler AdminCommentList
+	get /comments (AdminCommentListRequest) returns (AdminCommentListResponse)
+
+	@handler AdminCommentAudit
+	post /comments/:comment_id/audit (AdminCommentAuditRequest) returns (EmptyResponse)
+}
+

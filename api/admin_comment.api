@@ -1,0 +1,38 @@
+// 评论举报管理（admin）
+
+import "base.api"
+import "comment.api"
+
+type AdminCommentReportItem {
+    ReportId        int64            `json:"report_id"`
+    CommentId       int64            `json:"comment_id"`
+    CommentContent  string           `json:"comment_content"`
+    CommentStatus   int              `json:"comment_status"`
+    PostId          int64            `json:"post_id"`
+    PostTitle       string           `json:"post_title"`
+    Author          CommentAuthor    `json:"author"`
+    ReportCount     int              `json:"report_count"`
+    Status          int              `json:"status"`           // 1=待处理 2=已隐藏 3=已删除 4=已驳回
+    ReportedAt      string           `json:"reported_at"`
+    ReasonSummary   string           `json:"reason_summary"`   // "2 次 spam,1 次 abuse"
+    Reporters       []CommentAuthor  `json:"reporters"`        // 最多展示 3 人
+}
+
+type AdminCommentListResponse {
+    List  []AdminCommentReportItem `json:"list"`
+    Total int64                    `json:"total"`
+}
+
+type AdminCommentListRequest {
+    PageRequest
+    FilterStatus int    `form:"filter_status,default=1,options=1|2|3|4"`
+    // 1=待处理 2=已隐藏 3=已删除 4=已驳回
+    AuthorType   int    `form:"author_type,default=0,options=0|1|2"` // 0=全部 1=user 2=shop
+    Keyword      string `form:"keyword,optional"`
+}
+
+type AdminCommentAuditRequest {
+    Id     int64  `path:"comment_id"`
+    Action string `json:"action" validate:"required,oneof=keep hide delete"`
+    Reason string `json:"reason,optional" validate:"max=500"`
+}

@@ -1,0 +1,24 @@
+// 健康检查
+type HealthReq {}
+
+type HealthItem {
+	Name   string `json:"name"` // 检查项: tencent_map / db / redis
+	Status string `json:"status"` // "ok" | "fail" | "skipped"
+	Msg    string `json:"msg,omitempty"`
+}
+
+type HealthResp {
+	Status string       `json:"status"` // "ok" | "degraded"
+	Items  []HealthItem `json:"items"`
+	Ts     int64        `json:"ts"` // 检查时间戳(unix 秒)
+}
+
+@server (
+	group:  user
+	prefix: /api/v1
+)
+service mini-api {
+	@handler Health
+	get /health (HealthReq) returns (HealthResp)
+}
+

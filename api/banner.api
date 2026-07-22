@@ -1,0 +1,37 @@
+// 轮播图模块类型定义
+
+import "base.api"
+
+type BannerCreateRequest {
+    Image      string `json:"image" validate:"required,max=512"`
+    JumpType   int    `json:"jump_type,default=0,options=0|1|2|3|4"`
+    JumpTarget string `json:"jump_target,optional"`
+    SortOrder  int    `json:"sort_order,default=0"`
+    Title      string `json:"title,optional,max=64"`
+}
+
+type BannerUpdateRequest {
+    IdRequest
+    Image      string `json:"image" validate:"required,max=512"`
+    JumpType   int    `json:"jump_type,default=0,options=0|1|2|3|4"`
+    JumpTarget string `json:"jump_target,optional"`
+    SortOrder  int    `json:"sort_order,default=0"`
+    Title      string `json:"title,optional,max=64"`
+    Status     int    `json:"status,default=1,options=1|2"`
+}
+
+type BannerItem {
+    Id         int64  `json:"id"`
+    Image      string `json:"image"`
+    JumpType   int    `json:"jump_type"`
+    JumpTarget string `json:"jump_target"`
+    SortOrder  int    `json:"sort_order"`
+    Title      string `json:"title"`
+    Status     int    `json:"status"`
+    CreatedAt  string `json:"created_at"`
+}
+
+type BannerListResponse {
+    List  []BannerItem `json:"list"`
+    Total int64        `json:"total"`
+}

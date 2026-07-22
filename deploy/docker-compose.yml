@@ -1,0 +1,81 @@
+# 所有凭证从 deploy/.env 读取(需 .gitignore)
+# 首次使用:cp deploy/.env.example deploy/.env 并填真实值
+
+services:
+  # ============================================================
+  # MySQL
+  # ============================================================
+  mysql:
+    image: ${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:mysql-8.0
+    container_name: local-life-mysql
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: local_life
+      MYSQL_CHARSET: utf8mb4
+    ports:
+      - "127.0.0.1:3306:3306"    # 只允许本机访问
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # Redis
+  # ============================================================
+  redis:
+    image: ${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:redis-7.0
+    container_name: local-life-redis
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:6379:6379"    # 只允许本机访问
+    volumes:
+      - redis-data:/data
+    # shell -c 包装,让 ${REDIS_PASSWORD} 在容器启动时展开
+    command: >
+      sh -c 'redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -a $${REDIS_PASSWORD} ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================
+  # 主服务
+  # ============================================================
+  local-life-api:
+    # image 由 CI 从镜像仓库 pull 后 re-tag 成 ${IMAGE_NAME}:server-latest
+    # 本地 docker compose up 时 fallback 到 ${IMAGE_NAME:-local-life-api},需自带标签
+    image: ${IMAGE_NAME:-local-life-api}:server-latest
+    build:
+      context: ../../
+      dockerfile: local-life-api/Dockerfile
+    container_name: ${APP_CONTAINER:-local-life-api}
+    restart: unless-stopped
+    stop_grace_period: 30s    # 优雅停机:30s 内处理完 in-flight 请求再退出
+    env_file: .env
+    ports:
+      - "8888:8888"
+    environment:
+      - TZ=Asia/Shanghai
+      - DB_DATASOURCE=root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/local_life?charset=utf8mb4&parseTime=True&loc=Local
+      - TENCENT_MAP_KEY=${TENCENT_MAP_KEY}
+    volumes:
+      # named volume:容器内 app 用户(uid 1000)有写权限,无需 bind mount
+      - api-logs:/data/logs/mini-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  redis-data:
+  api-logs:

@@ -1,0 +1,90 @@
+// 评论模块类型定义（C 端 + 公共）
+//   - 不需要 jwt 的 list/replies 独立 group
+//   - 需要 jwt 的 create/delete/like/report 单独 group
+
+import "base.api"
+
+// ===== 请求类型 =====
+
+type CommentCreateRequest {
+    PostId   int64  `path:"post_id"`                     // 路由 path 参数:/posts/:post_id/comments
+    ParentId int64  `json:"parent_id,default=0"`       // 0=一级评论;>0=子回复
+    Content  string `json:"content" validate:"required,min=1,max=1000"`
+}
+
+type CommentDeleteRequest {
+    Id int64 `path:"comment_id"`
+}
+
+type CommentLikeRequest {
+    Id int64 `path:"comment_id"`
+}
+
+type CommentReportRequest {
+    Id          int64  `path:"comment_id"`
+    Reason      string `json:"reason" validate:"required,oneof=spam abuse illegal other"`
+    Description string `json:"description,optional" validate:"max=500"`
+}
+
+type CommentListRequest {
+    PostId int64  `path:"post_id"`
+    Cursor string `form:"cursor,optional"`
+    Limit  int    `form:"limit,default=20,options=[10,20,50]"`
+    Sort   string `form:"sort,default=time,options=[time,hot]"`
+}
+
+type CommentRepliesRequest {
+    PostId  int64  `path:"post_id"`
+    RootId  int64  `path:"root_id"`
+    Cursor  string `form:"cursor,optional"`
+    Limit   int    `form:"limit,default=20,options=[10,20,50]"`
+}
+
+// ===== 响应类型 =====
+
+type CommentAuthor {
+    Id     string `json:"id"`     // user_id / shop_id
+    Type   int    `json:"type"`   // 1=user 2=shop
+    Name   string `json:"name"`
+    Avatar string `json:"avatar"`
+    IsShop bool   `json:"is_shop"`
+}
+
+type CommentItem {
+    Id            int64          `json:"id"`
+    PostId        int64          `json:"post_id"`
+    ParentId      int64          `json:"parent_id"`
+    RootId        int64          `json:"root_id"`
+    Content       string         `json:"content"`
+    Author        CommentAuthor  `json:"author"`
+    ReplyToUser   *CommentAuthor `json:"reply_to_user,optional"`  // 二级回复指向的 @对象
+    LikeCount     int            `json:"like_count"`
+    ReplyCount    int            `json:"reply_count"`
+    IsLiked       bool           `json:"is_liked"`
+    IsMentionedMe bool           `json:"is_mentioned_me"`
+    Status        int            `json:"status"`              // 1正常 2已删除 3审核中（拉时已过滤 3）
+    CreatedAt     string         `json:"created_at"`
+    // 嵌套子回复(最多 3 条,父评论项用)
+    TopReplies     []*CommentItem `json:"top_replies"`
+    HasMoreReplies bool           `json:"has_more_replies"`
+    TotalReplies   int            `json:"total_replies"`
+}
+
+type CommentListResponse {
+    Items      []*CommentItem `json:"items"`
+    NextCursor string         `json:"next_cursor"`
+    HasMore    bool           `json:"has_more"`
+}
+
+type CommentCreateResponse {
+    Item *CommentItem `json:"item"`
+}
+
+type CommentLikeResponse {
+    Liked     bool `json:"liked"`
+    LikeCount int  `json:"like_count"`
+}
+
+type CommentReportResponse {
+    AlreadyReported bool `json:"already_reported"`
+}

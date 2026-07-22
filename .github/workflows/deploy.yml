@@ -1,0 +1,189 @@
+# 通用 Docker 镜像 build + deploy 流水线
+#
+# 依赖 GitHub Vars(明文配置)+ Secrets(凭证)+ ECS self-hosted runner
+# 配置项见同目录 README.md
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image_name: ${{ env.IMAGE_NAME }}
+    env:
+      ACR_REGISTRY_HOST: ${{ vars.ACR_REGISTRY_HOST }}
+      ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      BASE_GOLANG_TAG: ${{ vars.BASE_GOLANG_TAG }}
+      BASE_ALPINE_TAG: ${{ vars.BASE_ALPINE_TAG }}
+      DOCKER_BUILDKIT: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "image_tag=${IMAGE_NAME}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "▶ Image tag: ${IMAGE_NAME}-${SHORT_SHA}"
+
+      - name: Login to ACR
+        env:
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+        run: |
+          echo "▶ ACR login: ${ACR_REGISTRY_HOST}"
+          echo "${ACR_PASSWORD}" | docker login \
+            --username "${ACR_USERNAME}" \
+            --password-stdin "${ACR_REGISTRY_HOST}"
+          echo "✅ ACR login OK"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push image
+        # 一次 build 打两个 tag:
+        #   ${IMAGE_NAME}-<sha>   immutable,精确版本
+        #   ${IMAGE_NAME}-latest  mutable pointer,deploy job 拉这个
+        run: |
+          set -e
+          REGISTRY="${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}"
+          GOLANG_IMAGE="${REGISTRY}:${BASE_GOLANG_TAG}"
+          ALPINE_IMAGE="${REGISTRY}:${BASE_ALPINE_TAG}"
+
+          IMAGE="${REGISTRY}:${{ steps.meta.outputs.image_tag }}"
+          LATEST="${REGISTRY}:${IMAGE_NAME}-latest"
+
+          # 清老 cache metadata,防止遗留 --mount=type=cache 元数据报错
+          docker builder prune -af || true
+
+          echo "▶ Building ${IMAGE} + ${LATEST}"
+          # 必须显式传 --build-arg:Dockerfile 里的默认值只是兜底
+          # shell 默认值:GH Var 没设时回落到 Dockerfile 的默认值
+          EFFECTIVE_GOLANG_TAG="${BASE_GOLANG_TAG:-golang-1.25-alpine}"
+          EFFECTIVE_ALPINE_TAG="${BASE_ALPINE_TAG:-alpine-3.21}"
+
+          docker buildx build \
+            --no-cache \
+            --pull \
+            --platform linux/amd64 \
+            --build-arg "REGISTRY=${REGISTRY}" \
+            --build-arg "GOLANG_TAG=${EFFECTIVE_GOLANG_TAG}" \
+            --build-arg "ALPINE_TAG=${EFFECTIVE_ALPINE_TAG}" \
+            -t "${IMAGE}" \
+            -t "${LATEST}" \
+            --push \
+            -f Dockerfile \
+            .
+
+          echo "✅ Pushed ${IMAGE} + ${LATEST}"
+
+  deploy:
+    name: Deploy to self-hosted runner
+    runs-on: [self-hosted, docker, aliyun]
+    needs: build
+    concurrency:
+      group: ${{ vars.CONCURRENCY_GROUP }}
+      cancel-in-progress: true
+    env:
+      ACR_REGISTRY_HOST: ${{ vars.ACR_REGISTRY_HOST }}
+      ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      APP_CONTAINER: ${{ vars.APP_CONTAINER }}
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+      HEALTH_PORT: ${{ vars.HEALTH_PORT }}
+      HEALTH_PATH: ${{ vars.HEALTH_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: .
+
+      - name: Pull image from ACR
+        # 拉 ${IMAGE_NAME}-latest,re-tag 成 ${IMAGE_NAME}:server-latest
+        # 凭证从 ${DEPLOY_DIR}/.env 读 REGISTRY_USERNAME / REGISTRY_PASSWORD
+        run: |
+          set -e
+          if [ -f "${DEPLOY_DIR}/.env" ]; then
+            set -a; source ${DEPLOY_DIR}/.env; set +a
+          fi
+          REGISTRY="${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}"
+          echo "▶ ACR login: ${REGISTRY}"
+          echo "${REGISTRY_PASSWORD}" | docker login \
+            --username "${REGISTRY_USERNAME}" \
+            --password-stdin "${REGISTRY}"
+
+          REMOTE_IMAGE="${REGISTRY}:${IMAGE_NAME}-latest"
+          LOCAL_IMAGE="${IMAGE_NAME}:server-latest"
+          docker pull "${REMOTE_IMAGE}"
+          docker tag "${REMOTE_IMAGE}" "${LOCAL_IMAGE}"
+          echo "✅ Pulled ${REMOTE_IMAGE} → ${LOCAL_IMAGE}"
+
+      - name: Sync & deploy
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -e
+
+          # 首次部署:创建部署目录
+          if [ ! -d "${DEPLOY_DIR}" ]; then
+            echo "首次部署,创建 ${DEPLOY_DIR}..."
+            mkdir -p "${DEPLOY_DIR}"
+          fi
+          # local-life-api 的 docker-compose.yml 在 deploy/ 子目录
+          cp $GITHUB_WORKSPACE/deploy/docker-compose.yml ${DEPLOY_DIR}/docker-compose.yml
+
+          # 首次部署:从 .env.example 生成 .env
+          if [ ! -f "${DEPLOY_DIR}/.env" ]; then
+            if [ -f deploy/.env.example ]; then
+              cp deploy/.env.example ${DEPLOY_DIR}/.env
+              echo "⚠️ 已创建 ${DEPLOY_DIR}/.env(从 deploy/.env.example),请手动填入真实凭证后再部署"
+            else
+              echo "❌ 项目无 deploy/.env.example,请手动创建 ${DEPLOY_DIR}/.env 后再触发部署"
+              exit 1
+            fi
+          fi
+
+          # 保活依赖容器(mysql + redis 挂了自动起,避免主服务连不上 redis)
+          cd ${DEPLOY_DIR}
+          docker compose up -d mysql redis
+          # 等依赖健康
+          echo "⏳ 等待 mysql + redis 健康..."
+          for i in $(seq 1 30); do
+            if docker exec local-life-mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" >/dev/null 2>&1 && \
+               docker exec local-life-redis redis-cli -a "${REDIS_PASSWORD}" ping >/dev/null 2>&1; then
+              echo "✅ mysql + redis 健康"
+              break
+            fi
+            sleep 2
+          done
+
+          # 重启 api 容器
+          # 不加 --wait:容器没 HEALTHCHECK 会卡 90s timeout
+          docker compose up -d --no-deps ${APP_CONTAINER}
+          docker ps -a
+
+          docker image prune -f
+          echo "✅ ${IMAGE_NAME} deployed"
+
+      - name: Health check
+        # docker exec 进容器内检测(Linux runner 上 host.docker.internal 不通)
+        run: |
+          echo "⏳ 等待 ${APP_CONTAINER} 健康检查..."
+          for i in $(seq 1 30); do
+            if docker exec ${APP_CONTAINER} wget -q -T 2 -O /dev/null http://localhost:${HEALTH_PORT}${HEALTH_PATH} 2>/dev/null; then
+              echo "✅ 健康(尝试 $i 次,wget ${HEALTH_PATH})"
+              exit 0
+            fi
+            if docker exec ${APP_CONTAINER} nc -z localhost ${HEALTH_PORT} 2>/dev/null; then
+              echo "✅ 端口 ${HEALTH_PORT} 已监听(尝试 $i 次,nc -z)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "⚠️ 30 次未通过健康检查,请手动 docker compose logs ${APP_CONTAINER}"
+          exit 1

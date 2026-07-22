@@ -1,0 +1,69 @@
+// 首页模块类型定义
+import "shop.api"
+import "post.api"
+
+type HomeRequest {
+	AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤(6位国标);空则全市
+	CityAdcode string `form:"city_adcode,optional"` // 可选:按市过滤(6位国标);area/city 二选一,city 优先
+}
+
+type HomeNoticeItem {
+	Id    int64  `json:"id"`
+	Title string `json:"title"`
+}
+
+type HomeBannerItem {
+	Id         int64  `json:"id"`
+	Image      string `json:"image"`
+	JumpType   int    `json:"jump_type"`
+	JumpTarget string `json:"jump_target"`
+}
+
+type HomeResponse {
+	Notices []HomeNoticeItem `json:"notices"`
+	Banners []HomeBannerItem `json:"banners"`
+	Shops   []ShopItem       `json:"shops"` // 精选商家(前6条已通过)
+}
+
+// ===== 首页本地推荐混合流（本地小店 + 用户发帖，按 view_count × 时间衰减加权排序）=====
+type HomeFeedItem {
+	// 通用字段
+	Type   string  `json:"type,options=shop|post"` // shop=本地小店, post=用户发帖
+	Weight float64 `json:"weight,optional"` // 推荐分（前端调试用）
+	// ====== shop 字段（Type=shop 时填充）======
+	ShopId        int64  `json:"shop_id,optional"`
+	ShopName      string `json:"shop_name,optional"`
+	ShopCover     string `json:"shop_cover,optional"`
+	ShopCategory  int    `json:"shop_category,optional"`
+	ShopCatName   string `json:"shop_cat_name,optional"`
+	ShopCatEmoji  string `json:"shop_cat_emoji,optional"`
+	ShopAddress   string `json:"shop_address,optional"`
+	ShopViewCount int    `json:"shop_view_count,optional"`
+	ShopNickname  string `json:"shop_nickname,optional"`
+	// ====== post 字段（Type=post 时填充）======
+	PostId           int64  `json:"post_id,optional"`
+	PostType         int    `json:"post_type,optional"`
+	PostTypeName     string `json:"post_type_name,optional"`
+	PostTypeEmoji    string `json:"post_type_emoji,optional"`
+	PostTitle        string `json:"post_title,optional"`
+	PostCover        string `json:"post_cover,optional"`
+	PostArea         string `json:"post_area,optional"`
+	PostViewCount    int    `json:"post_view_count,optional"`
+	PostNickname     string `json:"post_nickname,optional"`
+	PostCommentCount int    `json:"post_comment_count,optional"`
+}
+
+type HomeFeedRequest {
+	Page       int64  `form:"page,default=1"`
+	PageSize   int64  `form:"page_size,default=12"` // 默认 12 条:小店/发帖各占一半
+	AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
+	CityAdcode string `form:"city_adcode,optional"` // 可选:按市过滤;city 优先
+}
+
+type HomeFeedResponse {
+	List    []HomeFeedItem `json:"list"`
+	HasMore bool           `json:"has_more"` // 是否有下一页（前端无限下滑判断）
+}
+
+// service 块统一在 mini.api 里定义;此处只放类型,避免和 mini.api 冲突导致 goctl 报重名
+

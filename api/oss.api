@@ -1,0 +1,58 @@
+// OSS 直传相关 API（V4 签名 Header 直传方案）
+// 流程：前端 → getUploadToken → 拿 STS 临时凭证 + V4 签名头
+//       前端 wx.uploadFile 直传 OSS（带 V4 Header,不走后端）
+//       前端拿到 file_key 后,在业务接口(发布信息/入驻商家)中提交,后端落库时再验
+
+// ====================
+// 请求 / 响应类型
+// ====================
+
+// GetUploadTokenRequest 获取上传临时凭证
+//   - file_type 用于服务端校验（限制上传类型: image / video / avatar）
+//   - biz 业务场景(post / shop / avatar / banner / notice),决定生成的文件 key 前缀
+//   - ext 文件后缀（不带点），用于服务端拼 key 和校验白名单
+//   - size 文件大小（字节），可选：用于服务端提前限流
+type GetUploadTokenRequest {
+    FileType string `json:"file_type" validate:"required,oneof=image video avatar"`
+    Biz      string `json:"biz"       validate:"required,oneof=post shop avatar banner notice"`
+    Ext      string `json:"ext"       validate:"required,min=1,max=10"`
+    Size     int64  `json:"size,optional"`
+}
+
+// STS 临时凭证（前端直传 OSS 用）
+//   - 注意：不返回 AccessKeySecret。前端走 V4 Header 签名,服务端已签好,
+//     不需要 secret 在前端做签名计算,避免泄露面。
+//   - AccessKeyId 仍会通过 x-oss-credential 字段间接透出(V4 规范要求)。
+type STSCredentials {
+    AccessKeyId   string `json:"access_key_id"`
+    SecurityToken string `json:"security_token"`     // 放进 x-oss-security-token Header
+    Expiration    string `json:"expiration"`          // ISO8601,前端用来判断是否快过期
+}
+
+// V4 签名头（前端直接当作 wx.uploadFile 的 formData 字段传入即可）
+//   - x_oss_signature_version 固定 "OSS4-HMAC-SHA256"
+//   - x_oss_credential 形如 "<ak>/20240620/cn-hangzhou/oss/aliyun_v4_request"
+//   - x_oss_date 形如 "20240620T030936Z"（ISO8601 UTC Basic）
+//   - x_oss_signature 形如 "a1b2c3..."
+//   - x_oss_security_token 来自 STS
+type V4SignatureHeaders {
+    XOssSignatureVersion string `json:"x_oss_signature_version"`
+    XOssCredential       string `json:"x_oss_credential"`
+    XOssDate             string `json:"x_oss_date"`
+    XOssSignature        string `json:"x_oss_signature"`
+}
+
+// GetUploadTokenResponse 返回给前端的直传所需全部信息
+//   - 上传地址: {host}/{file_key}
+//   - formData 字段: key + 上面的 5 个签名/凭证字段
+//   - STS 凭证有效期建议 30 分钟
+//   - URL: 后端拼好的访问 URL(URLPrefix + fileKey,永久有效),前端直接渲染 + 入库用
+type GetUploadTokenResponse {
+    Host      string             `json:"host"`        // OSS bucket 域名,前端直传目标(CDN 不支持上传)
+    FileKey   string             `json:"file_key"`    // 推荐的文件 key(前端可覆盖,通常 = dir + uuid.ext)
+    Url       string             `json:"url"`         // 拼好的访问 URL(URLPrefix + fileKey,永久有效),前端直接渲染 + 入库用
+    Oss       STSCredentials     `json:"oss"`         // STS 临时凭证(给前端走 V4 PostObject 用)
+    V4        V4SignatureHeaders `json:"v4"`          // V4 签名头
+    Policy    string             `json:"policy"`      // Base64 编码后的 Policy,部分前端库需要
+    ExpireAt  int64              `json:"expire_at"`   // 整套凭证过期时间(Unix 秒)
+}

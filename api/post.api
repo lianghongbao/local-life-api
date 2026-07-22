@@ -1,0 +1,71 @@
+// 分类信息模块类型定义
+
+import "base.api"
+
+type PostCreateRequest {
+    Type      int     `json:"type" validate:"required,oneof=1 2 3 4 9"` // 1二手 2租房 3招聘 4求助 9其他
+    Title     string  `json:"title" validate:"required,max=128"`
+    Images    string  `json:"images,optional"` // JSON数组字符串
+    Content   string  `json:"content" validate:"required"`
+    Area      string  `json:"area" validate:"required,max=64"`
+    Latitude  float64 `json:"latitude,default=0"`
+    Longitude float64 `json:"longitude,default=0"`
+    Contact   string  `json:"contact" validate:"required,max=64"`
+}
+
+type PostUpdateRequest {
+    IdRequest
+    Type      int     `json:"type" validate:"required,oneof=1 2 3 4 9"`
+    Title     string  `json:"title" validate:"required,max=128"`
+    Images    string  `json:"images,optional"`
+    Content   string  `json:"content" validate:"required"`
+    Area      string  `json:"area" validate:"required,max=64"`
+    Latitude  float64 `json:"latitude,default=0"`
+    Longitude float64 `json:"longitude,default=0"`
+    Contact   string  `json:"contact" validate:"required,max=64"`
+}
+
+type PostItem {
+    Id           int64   `json:"id"`
+    UserId       int64   `json:"user_id"`
+    Nickname     string  `json:"nickname"`
+    Avatar       string  `json:"avatar"`
+    Type         int     `json:"type"`
+    Title        string  `json:"title"`
+    Images       string  `json:"images"`
+    Content      string  `json:"content"`
+    Area         string  `json:"area"`
+    Latitude     float64 `json:"latitude"`
+    Longitude    float64 `json:"longitude"`
+    Contact      string  `json:"contact"`
+    Status       int     `json:"status"`
+    RejectReason string  `json:"reject_reason"`
+    ViewCount    int     `json:"view_count"`
+    CommentCount int     `json:"comment_count"`
+    CreatedAt    string  `json:"created_at"`
+    UpdatedAt    string  `json:"updated_at"`
+    // 同城推荐定位字段
+    AreaAdcode string  `json:"area_adcode"`
+    AreaName   string  `json:"area_name"`
+    StreetName string  `json:"street_name"`
+    CityAdcode string  `json:"city_adcode,omitempty"` // 跨城市搜索结果带上市 adcode
+    CityName   string  `json:"city_name,omitempty"`
+}
+
+type PostListResponse {
+    List  []PostItem `json:"list"`
+    Total int64      `json:"total"`
+}
+
+type PostListRequest {
+    PageRequest
+    Type       int    `form:"type,default=0"` // 0全部 1二手 2租房 3招聘 4求助 9其他 (公开接口只查已通过)
+    AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
+    CityAdcode  string `form:"city_adcode,optional"`  // 可选:按市过滤;city 优先
+}
+
+type PostAuditRequest {
+    IdRequest
+    Status       int    `json:"status" validate:"required,oneof=2 4"` // 2通过 4拒绝
+    RejectReason string `json:"reject_reason,optional"`
+}

@@ -1,0 +1,5522 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "title": "小城便利贴 API",
+    "version": "v1.0"
+  },
+  "basePath": "/",
+  "paths": {
+    "/api/v1/admin/accounts": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminAccountList",
+        "operationId": "adminAdminAccountList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "username",
+                      "role",
+                      "status",
+                      "created_at",
+                      "updated_at"
+                    ],
+                    "properties": {
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "role": {
+                        "description": "1超级管理员(预留多角色)",
+                        "type": "integer"
+                      },
+                      "status": {
+                        "description": "1正常 2禁用",
+                        "type": "integer"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminAccountCreate",
+        "operationId": "adminAdminAccountCreate",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "username",
+                "password",
+                "role",
+                "status"
+              ],
+              "properties": {
+                "password": {
+                  "type": "string"
+                },
+                "role": {
+                  "description": "当前仅支持超管",
+                  "type": "integer",
+                  "default": 1,
+                  "enum": [
+                    "1"
+                  ],
+                  "example": 1
+                },
+                "status": {
+                  "description": "1正常 2禁用",
+                  "type": "integer",
+                  "default": 1,
+                  "enum": [
+                    "1",
+                    "2"
+                  ],
+                  "example": 1
+                },
+                "username": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/accounts/{id}": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminAccountUpdate",
+        "operationId": "adminAdminAccountUpdate",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "role",
+                "status"
+              ],
+              "properties": {
+                "role": {
+                  "type": "integer",
+                  "default": 1,
+                  "enum": [
+                    "1"
+                  ],
+                  "example": 1
+                },
+                "status": {
+                  "type": "integer",
+                  "default": 1,
+                  "enum": [
+                    "1",
+                    "2"
+                  ],
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminAccountDelete",
+        "operationId": "adminAdminAccountDelete",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/accounts/{id}/password": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminAccountChangePassword",
+        "operationId": "adminAdminAccountChangePassword",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "password"
+              ],
+              "properties": {
+                "password": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/banners": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "BannerList",
+        "operationId": "adminBannerList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "image",
+                      "jump_type",
+                      "jump_target",
+                      "sort_order",
+                      "title",
+                      "status",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "image": {
+                        "type": "string"
+                      },
+                      "jump_target": {
+                        "type": "string"
+                      },
+                      "jump_type": {
+                        "type": "integer"
+                      },
+                      "sort_order": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "BannerCreate",
+        "operationId": "adminBannerCreate",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "image",
+                "jump_type",
+                "sort_order"
+              ],
+              "properties": {
+                "image": {
+                  "type": "string"
+                },
+                "jump_target": {
+                  "type": "string"
+                },
+                "jump_type": {
+                  "type": "integer",
+                  "default": 0,
+                  "enum": [
+                    "0",
+                    "1",
+                    "2",
+                    "3",
+                    "4"
+                  ],
+                  "example": 0
+                },
+                "sort_order": {
+                  "type": "integer",
+                  "default": 0,
+                  "example": 0
+                },
+                "title": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/banners/{id}": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "BannerUpdate",
+        "operationId": "adminBannerUpdate",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "image",
+                "jump_type",
+                "sort_order",
+                "status"
+              ],
+              "properties": {
+                "image": {
+                  "type": "string"
+                },
+                "jump_target": {
+                  "type": "string"
+                },
+                "jump_type": {
+                  "type": "integer",
+                  "default": 0,
+                  "enum": [
+                    "0",
+                    "1",
+                    "2",
+                    "3",
+                    "4"
+                  ],
+                  "example": 0
+                },
+                "sort_order": {
+                  "type": "integer",
+                  "default": 0,
+                  "example": 0
+                },
+                "status": {
+                  "type": "integer",
+                  "default": 1,
+                  "enum": [
+                    "1",
+                    "2"
+                  ],
+                  "example": 1
+                },
+                "title": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "BannerDelete",
+        "operationId": "adminBannerDelete",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminCommentList",
+        "operationId": "adminAdminCommentList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "filter_status",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "0",
+              "1",
+              "2"
+            ],
+            "type": "integer",
+            "default": 0,
+            "example": 0,
+            "description": "0=全部 1=user 2=shop",
+            "name": "author_type",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "keyword",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "report_id",
+                      "comment_id",
+                      "comment_content",
+                      "comment_status",
+                      "post_id",
+                      "post_title",
+                      "author",
+                      "report_count",
+                      "status",
+                      "reported_at",
+                      "reason_summary",
+                      "reporters"
+                    ],
+                    "properties": {
+                      "author": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "avatar",
+                          "is_shop"
+                        ],
+                        "properties": {
+                          "avatar": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "user_id / shop_id",
+                            "type": "string"
+                          },
+                          "is_shop": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "description": "1=user 2=shop",
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "comment_content": {
+                        "type": "string"
+                      },
+                      "comment_id": {
+                        "type": "integer"
+                      },
+                      "comment_status": {
+                        "type": "integer"
+                      },
+                      "post_id": {
+                        "type": "integer"
+                      },
+                      "post_title": {
+                        "type": "string"
+                      },
+                      "reason_summary": {
+                        "description": "\"2 次 spam,1 次 abuse\"",
+                        "type": "string"
+                      },
+                      "report_count": {
+                        "type": "integer"
+                      },
+                      "report_id": {
+                        "type": "integer"
+                      },
+                      "reported_at": {
+                        "type": "string"
+                      },
+                      "reporters": {
+                        "description": "最多展示 3 人",
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "type",
+                            "name",
+                            "avatar",
+                            "is_shop"
+                          ],
+                          "properties": {
+                            "avatar": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "description": "user_id / shop_id",
+                              "type": "string"
+                            },
+                            "is_shop": {
+                              "type": "boolean"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "description": "1=user 2=shop",
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      },
+                      "status": {
+                        "description": "1=待处理 2=已隐藏 3=已删除 4=已驳回",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments/feed": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminCommentFeedList",
+        "operationId": "adminAdminCommentFeedList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 20,
+            "example": 20,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "name": "post_id",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "enum": [
+              "[0"
+            ],
+            "type": "integer",
+            "default": 0,
+            "example": 0,
+            "description": "0=全部 1=user 2=shop",
+            "name": "author_type",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "[0"
+            ],
+            "type": "integer",
+            "default": 0,
+            "example": 0,
+            "description": "0=全部 1=正常 2=已删除 3=审核中",
+            "name": "status",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "评论内容模糊搜索",
+            "name": "keyword",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "description": "YYYY-MM-DD",
+            "name": "date_from",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "name": "date_to",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "comment_id",
+                      "parent_id",
+                      "reply_to_uid",
+                      "reply_to_name",
+                      "content",
+                      "status",
+                      "author_type",
+                      "author_id",
+                      "author_name",
+                      "author_avatar",
+                      "post_id",
+                      "post_title",
+                      "reply_count",
+                      "status_text"
+                    ],
+                    "properties": {
+                      "author_avatar": {
+                        "type": "string"
+                      },
+                      "author_id": {
+                        "type": "string"
+                      },
+                      "author_name": {
+                        "type": "string"
+                      },
+                      "author_type": {
+                        "type": "integer"
+                      },
+                      "comment_id": {
+                        "type": "integer"
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "parent_id": {
+                        "description": "一级=0;二级=一级id",
+                        "type": "integer"
+                      },
+                      "post_id": {
+                        "type": "integer"
+                      },
+                      "post_title": {
+                        "type": "string"
+                      },
+                      "reply_count": {
+                        "description": "一级的二级数;二级永远为 0",
+                        "type": "integer"
+                      },
+                      "reply_to_name": {
+                        "type": "string"
+                      },
+                      "reply_to_uid": {
+                        "description": "二级才有;一级为空",
+                        "type": "string"
+                      },
+                      "status": {
+                        "description": "1=正常 2=已删除 3=审核中",
+                        "type": "integer"
+                      },
+                      "status_text": {
+                        "description": "\"正常\"/\"已删除\"/\"审核中\"",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments/{comment_id}/audit": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminCommentAudit",
+        "operationId": "adminAdminCommentAudit",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "comment_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "properties": {
+                "action": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments/{comment_id}/replies": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminCommentFeedReplies",
+        "operationId": "adminAdminCommentFeedReplies",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "comment_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 20,
+            "example": 20,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "comment_id",
+                      "parent_id",
+                      "reply_to_uid",
+                      "reply_to_name",
+                      "content",
+                      "status",
+                      "author_type",
+                      "author_id",
+                      "author_name",
+                      "author_avatar",
+                      "post_id",
+                      "post_title",
+                      "reply_count",
+                      "status_text"
+                    ],
+                    "properties": {
+                      "author_avatar": {
+                        "type": "string"
+                      },
+                      "author_id": {
+                        "type": "string"
+                      },
+                      "author_name": {
+                        "type": "string"
+                      },
+                      "author_type": {
+                        "type": "integer"
+                      },
+                      "comment_id": {
+                        "type": "integer"
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "parent_id": {
+                        "description": "一级=0;二级=一级id",
+                        "type": "integer"
+                      },
+                      "post_id": {
+                        "type": "integer"
+                      },
+                      "post_title": {
+                        "type": "string"
+                      },
+                      "reply_count": {
+                        "description": "一级的二级数;二级永远为 0",
+                        "type": "integer"
+                      },
+                      "reply_to_name": {
+                        "type": "string"
+                      },
+                      "reply_to_uid": {
+                        "description": "二级才有;一级为空",
+                        "type": "string"
+                      },
+                      "status": {
+                        "description": "1=正常 2=已删除 3=审核中",
+                        "type": "integer"
+                      },
+                      "status_text": {
+                        "description": "\"正常\"/\"已删除\"/\"审核中\"",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "root_author_avatar": {
+                  "type": "string"
+                },
+                "root_author_name": {
+                  "type": "string"
+                },
+                "root_author_type": {
+                  "type": "integer"
+                },
+                "root_content": {
+                  "type": "string"
+                },
+                "root_ctime": {
+                  "description": "一级时间,Drawer 头部",
+                  "type": "string"
+                },
+                "root_status": {
+                  "type": "integer"
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comments/{comment_id}/status": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminCommentFeedChangeStatus",
+        "operationId": "adminAdminCommentFeedChangeStatus",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "comment_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "properties": {
+                "action": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/login": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminLogin",
+        "operationId": "adminAdminLogin",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "username",
+                "password"
+              ],
+              "properties": {
+                "password": {
+                  "type": "string"
+                },
+                "username": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "token": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notices": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeList",
+        "operationId": "adminNoticeList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "title",
+                      "content",
+                      "is_top",
+                      "status",
+                      "created_at",
+                      "updated_at"
+                    ],
+                    "properties": {
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "is_top": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeCreate",
+        "operationId": "adminNoticeCreate",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "title",
+                "content",
+                "is_top"
+              ],
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "is_top": {
+                  "type": "integer",
+                  "default": 0,
+                  "enum": [
+                    "0",
+                    "1"
+                  ],
+                  "example": 0
+                },
+                "title": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notices/{id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeDetail",
+        "operationId": "adminNoticeDetail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "is_top": {
+                  "type": "integer"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "updated_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeUpdate",
+        "operationId": "adminNoticeUpdate",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "title",
+                "content",
+                "is_top"
+              ],
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "is_top": {
+                  "type": "integer",
+                  "default": 0,
+                  "enum": [
+                    "0",
+                    "1"
+                  ],
+                  "example": 0
+                },
+                "title": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeDelete",
+        "operationId": "adminNoticeDelete",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oss/upload-token": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminGetUploadToken",
+        "operationId": "adminAdminGetUploadToken",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "file_type",
+                "biz",
+                "ext"
+              ],
+              "properties": {
+                "biz": {
+                  "type": "string"
+                },
+                "ext": {
+                  "type": "string"
+                },
+                "file_type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "expire_at": {
+                  "description": "整套凭证过期时间(Unix 秒)",
+                  "type": "integer"
+                },
+                "file_key": {
+                  "description": "推荐的文件 key(前端可覆盖,通常 = dir + uuid.ext)",
+                  "type": "string"
+                },
+                "host": {
+                  "description": "OSS bucket 域名,前端直传目标(CDN 不支持上传)",
+                  "type": "string"
+                },
+                "oss": {
+                  "description": "STS 临时凭证(给前端走 V4 PostObject 用)",
+                  "type": "object",
+                  "required": [
+                    "access_key_id",
+                    "security_token",
+                    "expiration"
+                  ],
+                  "properties": {
+                    "access_key_id": {
+                      "type": "string"
+                    },
+                    "expiration": {
+                      "description": "ISO8601,前端用来判断是否快过期",
+                      "type": "string"
+                    },
+                    "security_token": {
+                      "description": "放进 x-oss-security-token Header",
+                      "type": "string"
+                    }
+                  }
+                },
+                "policy": {
+                  "description": "Base64 编码后的 Policy,部分前端库需要",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "拼好的访问 URL(URLPrefix + fileKey,永久有效),前端直接渲染 + 入库用",
+                  "type": "string"
+                },
+                "v4": {
+                  "description": "V4 签名头",
+                  "type": "object",
+                  "required": [
+                    "x_oss_signature_version",
+                    "x_oss_credential",
+                    "x_oss_date",
+                    "x_oss_signature"
+                  ],
+                  "properties": {
+                    "x_oss_credential": {
+                      "type": "string"
+                    },
+                    "x_oss_date": {
+                      "type": "string"
+                    },
+                    "x_oss_signature": {
+                      "type": "string"
+                    },
+                    "x_oss_signature_version": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostAuditList",
+        "operationId": "adminPostAuditList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "type",
+                      "title",
+                      "images",
+                      "content",
+                      "area",
+                      "latitude",
+                      "longitude",
+                      "contact",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "comment_count",
+                      "created_at",
+                      "updated_at",
+                      "area_adcode",
+                      "area_name",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "area": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "city_adcode": {
+                        "description": "跨城市搜索结果带上市 adcode",
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "comment_count": {
+                        "type": "integer"
+                      },
+                      "contact": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "integer"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts/{id}": {
+      "delete": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostDelete",
+        "operationId": "adminPostDelete",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/posts/{id}/audit": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostAudit",
+        "operationId": "adminPostAudit",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "reject_reason": {
+                  "type": "string"
+                },
+                "status": {
+                  "description": "2通过 4拒绝",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/shops": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "ShopAuditList",
+        "operationId": "adminShopAuditList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "name",
+                      "category",
+                      "address",
+                      "latitude",
+                      "longitude",
+                      "phone",
+                      "description",
+                      "images",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "created_at",
+                      "updated_at",
+                      "area_name",
+                      "area_adcode",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "description": "国标 6 位,区/县级",
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "description": "新增:商家所属区名",
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "integer"
+                      },
+                      "city_adcode": {
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/shops/{id}/audit": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "ShopAudit",
+        "operationId": "adminShopAudit",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "reject_reason": {
+                  "type": "string"
+                },
+                "status": {
+                  "description": "2通过 4拒绝",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminUserList",
+        "operationId": "adminAdminUserList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "nickname",
+                      "avatar",
+                      "phone",
+                      "status",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminUserDetail",
+        "operationId": "adminAdminUserDetail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "avatar": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "openid": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "updated_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/ban": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "AdminUserBan",
+        "operationId": "adminAdminUserBan",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "description": "1解封 2封禁",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/geo/areas": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "GeoAreas",
+        "operationId": "userGeoAreas",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "可选:不传则返回全国热门区(按聚合数)",
+            "name": "city_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "description": "可选:区名模糊搜索",
+            "name": "keyword",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "integer",
+            "description": "默认 50,搜索时建议 20",
+            "name": "limit",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "area_adcode",
+                      "area_name",
+                      "city_adcode",
+                      "city_name",
+                      "post_count",
+                      "shop_count"
+                    ],
+                    "properties": {
+                      "area_adcode": {
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "type": "string"
+                      },
+                      "city_adcode": {
+                        "description": "跨城市搜索结果带上市 adcode",
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "post_count": {
+                        "type": "integer"
+                      },
+                      "shop_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/geo/cities": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "GeoCities",
+        "operationId": "userGeoCities",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "城市名模糊搜索",
+            "name": "keyword",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "integer",
+            "description": "默认 50",
+            "name": "limit",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "city_adcode",
+                      "city_name",
+                      "area_count",
+                      "post_count",
+                      "shop_count"
+                    ],
+                    "properties": {
+                      "area_count": {
+                        "description": "该城市下有内容的区数",
+                        "type": "integer"
+                      },
+                      "city_adcode": {
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "post_count": {
+                        "description": "该城市帖子数",
+                        "type": "integer"
+                      },
+                      "shop_count": {
+                        "description": "该城市商家数",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/geo/reverse": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "GeoReverse",
+        "operationId": "userGeoReverse",
+        "parameters": [
+          {
+            "type": "number",
+            "description": "必填,小数 6 位以内",
+            "name": "lat",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "number",
+            "description": "必填",
+            "name": "lng",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "area_adcode": {
+                  "description": "国标 6 位",
+                  "type": "string"
+                },
+                "area_name": {
+                  "type": "string"
+                },
+                "city_adcode": {
+                  "description": "国标 6 位,失败时 \"\"",
+                  "type": "string"
+                },
+                "city_name": {
+                  "description": "失败时 \"\"",
+                  "type": "string"
+                },
+                "formatted_address": {
+                  "description": "冗余,UI 备用",
+                  "type": "string"
+                },
+                "street_name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/geo/streets": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "GeoStreets",
+        "operationId": "userGeoStreets",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "必填",
+            "name": "area_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "street_name",
+                      "post_count",
+                      "shop_count"
+                    ],
+                    "properties": {
+                      "post_count": {
+                        "type": "integer"
+                      },
+                      "shop_count": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "Health",
+        "operationId": "userHealth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "status",
+                      "msg"
+                    ],
+                    "properties": {
+                      "msg": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "检查项: tencent_map / db / redis",
+                        "type": "string"
+                      },
+                      "status": {
+                        "description": "\"ok\" | \"fail\" | \"skipped\"",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "status": {
+                  "description": "\"ok\" | \"degraded\"",
+                  "type": "string"
+                },
+                "ts": {
+                  "description": "检查时间戳(unix 秒)",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/home": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "HomeIndex",
+        "operationId": "userHomeIndex",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "可选:按区过滤(6位国标);空则全市",
+            "name": "area_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按市过滤(6位国标);area/city 二选一,city 优先",
+            "name": "city_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "banners": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "image",
+                      "jump_type",
+                      "jump_target"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "image": {
+                        "type": "string"
+                      },
+                      "jump_target": {
+                        "type": "string"
+                      },
+                      "jump_type": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "notices": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "title"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "shops": {
+                  "description": "精选商家(前6条已通过)",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "name",
+                      "category",
+                      "address",
+                      "latitude",
+                      "longitude",
+                      "phone",
+                      "description",
+                      "images",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "created_at",
+                      "updated_at",
+                      "area_name",
+                      "area_adcode",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "description": "国标 6 位,区/县级",
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "description": "新增:商家所属区名",
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "integer"
+                      },
+                      "city_adcode": {
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/home/feed": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "HomeFeed",
+        "operationId": "userHomeFeed",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 12,
+            "example": 12,
+            "description": "默认 12 条:小店/发帖各占一半",
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按区过滤;空则全市",
+            "name": "area_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按市过滤;city 优先",
+            "name": "city_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "has_more": {
+                  "description": "是否有下一页（前端无限下滑判断）",
+                  "type": "boolean"
+                },
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "post_area": {
+                        "type": "string"
+                      },
+                      "post_comment_count": {
+                        "type": "integer"
+                      },
+                      "post_cover": {
+                        "type": "string"
+                      },
+                      "post_id": {
+                        "type": "integer"
+                      },
+                      "post_nickname": {
+                        "type": "string"
+                      },
+                      "post_title": {
+                        "type": "string"
+                      },
+                      "post_type": {
+                        "type": "integer"
+                      },
+                      "post_type_emoji": {
+                        "type": "string"
+                      },
+                      "post_type_name": {
+                        "type": "string"
+                      },
+                      "post_view_count": {
+                        "type": "integer"
+                      },
+                      "shop_address": {
+                        "type": "string"
+                      },
+                      "shop_cat_emoji": {
+                        "type": "string"
+                      },
+                      "shop_cat_name": {
+                        "type": "string"
+                      },
+                      "shop_category": {
+                        "type": "integer"
+                      },
+                      "shop_cover": {
+                        "type": "string"
+                      },
+                      "shop_id": {
+                        "type": "integer"
+                      },
+                      "shop_name": {
+                        "type": "string"
+                      },
+                      "shop_nickname": {
+                        "type": "string"
+                      },
+                      "shop_view_count": {
+                        "type": "integer"
+                      },
+                      "type": {
+                        "description": "shop=本地小店, post=用户发帖",
+                        "type": "string",
+                        "enum": [
+                          "shop",
+                          "post"
+                        ]
+                      },
+                      "weight": {
+                        "description": "推荐分（前端调试用）",
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/login": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "Login",
+        "operationId": "userLogin",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "code"
+              ],
+              "properties": {
+                "code": {
+                  "description": "微信登录code",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "openid": {
+                  "description": "微信OpenID,排查时前端可直接提供",
+                  "type": "string"
+                },
+                "token": {
+                  "type": "string"
+                },
+                "unionid": {
+                  "description": "微信UnionID(同主体跨端合并),可能为空",
+                  "type": "string"
+                },
+                "user_id": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notices": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeList",
+        "operationId": "userNoticeList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "title",
+                      "content",
+                      "is_top",
+                      "status",
+                      "created_at",
+                      "updated_at"
+                    ],
+                    "properties": {
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "is_top": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notices/{id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "NoticeDetail",
+        "operationId": "userNoticeDetail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "is_top": {
+                  "type": "integer"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "updated_at": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/oss/upload-token": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "GetUploadToken",
+        "operationId": "userGetUploadToken",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "file_type",
+                "biz",
+                "ext"
+              ],
+              "properties": {
+                "biz": {
+                  "type": "string"
+                },
+                "ext": {
+                  "type": "string"
+                },
+                "file_type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "expire_at": {
+                  "description": "整套凭证过期时间(Unix 秒)",
+                  "type": "integer"
+                },
+                "file_key": {
+                  "description": "推荐的文件 key(前端可覆盖,通常 = dir + uuid.ext)",
+                  "type": "string"
+                },
+                "host": {
+                  "description": "OSS bucket 域名,前端直传目标(CDN 不支持上传)",
+                  "type": "string"
+                },
+                "oss": {
+                  "description": "STS 临时凭证(给前端走 V4 PostObject 用)",
+                  "type": "object",
+                  "required": [
+                    "access_key_id",
+                    "security_token",
+                    "expiration"
+                  ],
+                  "properties": {
+                    "access_key_id": {
+                      "type": "string"
+                    },
+                    "expiration": {
+                      "description": "ISO8601,前端用来判断是否快过期",
+                      "type": "string"
+                    },
+                    "security_token": {
+                      "description": "放进 x-oss-security-token Header",
+                      "type": "string"
+                    }
+                  }
+                },
+                "policy": {
+                  "description": "Base64 编码后的 Policy,部分前端库需要",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "拼好的访问 URL(URLPrefix + fileKey,永久有效),前端直接渲染 + 入库用",
+                  "type": "string"
+                },
+                "v4": {
+                  "description": "V4 签名头",
+                  "type": "object",
+                  "required": [
+                    "x_oss_signature_version",
+                    "x_oss_credential",
+                    "x_oss_date",
+                    "x_oss_signature"
+                  ],
+                  "properties": {
+                    "x_oss_credential": {
+                      "type": "string"
+                    },
+                    "x_oss_date": {
+                      "type": "string"
+                    },
+                    "x_oss_signature": {
+                      "type": "string"
+                    },
+                    "x_oss_signature_version": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostList",
+        "operationId": "userPostList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 0,
+            "example": 0,
+            "description": "0全部 1二手 2租房 3招聘 4求助 9其他 (公开接口只查已通过)",
+            "name": "type",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按区过滤;空则全市",
+            "name": "area_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按市过滤;city 优先",
+            "name": "city_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "type",
+                      "title",
+                      "images",
+                      "content",
+                      "area",
+                      "latitude",
+                      "longitude",
+                      "contact",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "comment_count",
+                      "created_at",
+                      "updated_at",
+                      "area_adcode",
+                      "area_name",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "area": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "city_adcode": {
+                        "description": "跨城市搜索结果带上市 adcode",
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "comment_count": {
+                        "type": "integer"
+                      },
+                      "contact": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "integer"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostCreate",
+        "operationId": "userPostCreate",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "type",
+                "title",
+                "content",
+                "area",
+                "latitude",
+                "longitude",
+                "contact"
+              ],
+              "properties": {
+                "area": {
+                  "type": "string"
+                },
+                "contact": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "images": {
+                  "description": "JSON数组字符串",
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "longitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "description": "1二手 2租房 3招聘 4求助 9其他",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostDetail",
+        "operationId": "userPostDetail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "area": {
+                  "type": "string"
+                },
+                "area_adcode": {
+                  "type": "string"
+                },
+                "area_name": {
+                  "type": "string"
+                },
+                "avatar": {
+                  "type": "string"
+                },
+                "city_adcode": {
+                  "description": "跨城市搜索结果带上市 adcode",
+                  "type": "string"
+                },
+                "city_name": {
+                  "type": "string"
+                },
+                "comment_count": {
+                  "type": "integer"
+                },
+                "contact": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "images": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "reject_reason": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "street_name": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "integer"
+                },
+                "updated_at": {
+                  "type": "string"
+                },
+                "user_id": {
+                  "type": "integer"
+                },
+                "view_count": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostUpdate",
+        "operationId": "userPostUpdate",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "type",
+                "title",
+                "content",
+                "area",
+                "latitude",
+                "longitude",
+                "contact"
+              ],
+              "properties": {
+                "area": {
+                  "type": "string"
+                },
+                "contact": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "images": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "longitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{id}/offline": {
+      "put": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "PostOffline",
+        "operationId": "userPostOffline",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}/comments": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "CommentList",
+        "operationId": "userCommentList",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "post_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "cursor",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "enum": [
+              "[10"
+            ],
+            "type": "integer",
+            "default": 20,
+            "example": 20,
+            "name": "limit",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "[time"
+            ],
+            "type": "string",
+            "default": "time",
+            "example": "time",
+            "name": "sort",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "has_more": {
+                  "type": "boolean"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "post_id",
+                      "parent_id",
+                      "root_id",
+                      "content",
+                      "author",
+                      "like_count",
+                      "reply_count",
+                      "is_liked",
+                      "is_mentioned_me",
+                      "status",
+                      "created_at",
+                      "top_replies",
+                      "has_more_replies",
+                      "total_replies"
+                    ],
+                    "properties": {
+                      "author": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "avatar",
+                          "is_shop"
+                        ],
+                        "properties": {
+                          "avatar": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "user_id / shop_id",
+                            "type": "string"
+                          },
+                          "is_shop": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "description": "1=user 2=shop",
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "has_more_replies": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "is_liked": {
+                        "type": "boolean"
+                      },
+                      "is_mentioned_me": {
+                        "type": "boolean"
+                      },
+                      "like_count": {
+                        "type": "integer"
+                      },
+                      "parent_id": {
+                        "type": "integer"
+                      },
+                      "post_id": {
+                        "type": "integer"
+                      },
+                      "reply_count": {
+                        "type": "integer"
+                      },
+                      "reply_to_user": {
+                        "description": "二级回复指向的 @对象",
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "avatar",
+                          "is_shop"
+                        ],
+                        "properties": {
+                          "avatar": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "user_id / shop_id",
+                            "type": "string"
+                          },
+                          "is_shop": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "description": "1=user 2=shop",
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "root_id": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "description": "1正常 2已删除 3审核中（拉时已过滤 3）",
+                        "type": "integer"
+                      },
+                      "top_replies": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "post_id",
+                            "parent_id",
+                            "root_id",
+                            "content",
+                            "author",
+                            "like_count",
+                            "reply_count",
+                            "is_liked",
+                            "is_mentioned_me",
+                            "status",
+                            "created_at",
+                            "top_replies",
+                            "has_more_replies",
+                            "total_replies"
+                          ],
+                          "properties": {
+                            "author": {
+                              "type": "object",
+                              "required": [
+                                "id",
+                                "type",
+                                "name",
+                                "avatar",
+                                "is_shop"
+                              ],
+                              "properties": {
+                                "avatar": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "description": "user_id / shop_id",
+                                  "type": "string"
+                                },
+                                "is_shop": {
+                                  "type": "boolean"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "description": "1=user 2=shop",
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "content": {
+                              "type": "string"
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "has_more_replies": {
+                              "type": "boolean"
+                            },
+                            "id": {
+                              "type": "integer"
+                            },
+                            "is_liked": {
+                              "type": "boolean"
+                            },
+                            "is_mentioned_me": {
+                              "type": "boolean"
+                            },
+                            "like_count": {
+                              "type": "integer"
+                            },
+                            "parent_id": {
+                              "type": "integer"
+                            },
+                            "post_id": {
+                              "type": "integer"
+                            },
+                            "reply_count": {
+                              "type": "integer"
+                            },
+                            "reply_to_user": {
+                              "description": "二级回复指向的 @对象",
+                              "type": "object"
+                            },
+                            "root_id": {
+                              "type": "integer"
+                            },
+                            "status": {
+                              "description": "1正常 2已删除 3审核中（拉时已过滤 3）",
+                              "type": "integer"
+                            },
+                            "top_replies": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "total_replies": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      },
+                      "total_replies": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "next_cursor": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "CommentCreate",
+        "operationId": "userCommentCreate",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "路由 path 参数:/posts/:post_id/comments",
+            "name": "post_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "parent_id",
+                "content"
+              ],
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "parent_id": {
+                  "description": "0=一级评论;\u003e0=子回复",
+                  "type": "integer",
+                  "default": 0,
+                  "example": 0
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "item": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "post_id",
+                    "parent_id",
+                    "root_id",
+                    "content",
+                    "author",
+                    "like_count",
+                    "reply_count",
+                    "is_liked",
+                    "is_mentioned_me",
+                    "status",
+                    "created_at",
+                    "top_replies",
+                    "has_more_replies",
+                    "total_replies"
+                  ],
+                  "properties": {
+                    "author": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "type",
+                        "name",
+                        "avatar",
+                        "is_shop"
+                      ],
+                      "properties": {
+                        "avatar": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "description": "user_id / shop_id",
+                          "type": "string"
+                        },
+                        "is_shop": {
+                          "type": "boolean"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "1=user 2=shop",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "has_more_replies": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "is_liked": {
+                      "type": "boolean"
+                    },
+                    "is_mentioned_me": {
+                      "type": "boolean"
+                    },
+                    "like_count": {
+                      "type": "integer"
+                    },
+                    "parent_id": {
+                      "type": "integer"
+                    },
+                    "post_id": {
+                      "type": "integer"
+                    },
+                    "reply_count": {
+                      "type": "integer"
+                    },
+                    "reply_to_user": {
+                      "description": "二级回复指向的 @对象",
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "type",
+                        "name",
+                        "avatar",
+                        "is_shop"
+                      ],
+                      "properties": {
+                        "avatar": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "description": "user_id / shop_id",
+                          "type": "string"
+                        },
+                        "is_shop": {
+                          "type": "boolean"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "1=user 2=shop",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "root_id": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "description": "1正常 2已删除 3审核中（拉时已过滤 3）",
+                      "type": "integer"
+                    },
+                    "top_replies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "post_id",
+                          "parent_id",
+                          "root_id",
+                          "content",
+                          "author",
+                          "like_count",
+                          "reply_count",
+                          "is_liked",
+                          "is_mentioned_me",
+                          "status",
+                          "created_at",
+                          "top_replies",
+                          "has_more_replies",
+                          "total_replies"
+                        ],
+                        "properties": {
+                          "author": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "type",
+                              "name",
+                              "avatar",
+                              "is_shop"
+                            ],
+                            "properties": {
+                              "avatar": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "description": "user_id / shop_id",
+                                "type": "string"
+                              },
+                              "is_shop": {
+                                "type": "boolean"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "description": "1=user 2=shop",
+                                "type": "integer"
+                              }
+                            }
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "has_more_replies": {
+                            "type": "boolean"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "is_liked": {
+                            "type": "boolean"
+                          },
+                          "is_mentioned_me": {
+                            "type": "boolean"
+                          },
+                          "like_count": {
+                            "type": "integer"
+                          },
+                          "parent_id": {
+                            "type": "integer"
+                          },
+                          "post_id": {
+                            "type": "integer"
+                          },
+                          "reply_count": {
+                            "type": "integer"
+                          },
+                          "reply_to_user": {
+                            "description": "二级回复指向的 @对象",
+                            "type": "object"
+                          },
+                          "root_id": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "description": "1正常 2已删除 3审核中（拉时已过滤 3）",
+                            "type": "integer"
+                          },
+                          "top_replies": {
+                            "type": "array",
+                            "items": {
+                              "type": "object"
+                            }
+                          },
+                          "total_replies": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "total_replies": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}/comments/{comment_id}": {
+      "delete": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "CommentDelete",
+        "operationId": "userCommentDelete",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "comment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}/comments/{comment_id}/like": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "CommentLike",
+        "operationId": "userCommentLike",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "comment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "like_count": {
+                  "type": "integer"
+                },
+                "liked": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}/comments/{comment_id}/report": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "CommentReport",
+        "operationId": "userCommentReport",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "comment_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "already_reported": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}/comments/{root_id}/replies": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "CommentReplies",
+        "operationId": "userCommentReplies",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "post_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "name": "root_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "cursor",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "enum": [
+              "[10"
+            ],
+            "type": "integer",
+            "default": 20,
+            "example": 20,
+            "name": "limit",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "has_more": {
+                  "type": "boolean"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "post_id",
+                      "parent_id",
+                      "root_id",
+                      "content",
+                      "author",
+                      "like_count",
+                      "reply_count",
+                      "is_liked",
+                      "is_mentioned_me",
+                      "status",
+                      "created_at",
+                      "top_replies",
+                      "has_more_replies",
+                      "total_replies"
+                    ],
+                    "properties": {
+                      "author": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "avatar",
+                          "is_shop"
+                        ],
+                        "properties": {
+                          "avatar": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "user_id / shop_id",
+                            "type": "string"
+                          },
+                          "is_shop": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "description": "1=user 2=shop",
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "has_more_replies": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "is_liked": {
+                        "type": "boolean"
+                      },
+                      "is_mentioned_me": {
+                        "type": "boolean"
+                      },
+                      "like_count": {
+                        "type": "integer"
+                      },
+                      "parent_id": {
+                        "type": "integer"
+                      },
+                      "post_id": {
+                        "type": "integer"
+                      },
+                      "reply_count": {
+                        "type": "integer"
+                      },
+                      "reply_to_user": {
+                        "description": "二级回复指向的 @对象",
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "avatar",
+                          "is_shop"
+                        ],
+                        "properties": {
+                          "avatar": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "user_id / shop_id",
+                            "type": "string"
+                          },
+                          "is_shop": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "description": "1=user 2=shop",
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "root_id": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "description": "1正常 2已删除 3审核中（拉时已过滤 3）",
+                        "type": "integer"
+                      },
+                      "top_replies": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "post_id",
+                            "parent_id",
+                            "root_id",
+                            "content",
+                            "author",
+                            "like_count",
+                            "reply_count",
+                            "is_liked",
+                            "is_mentioned_me",
+                            "status",
+                            "created_at",
+                            "top_replies",
+                            "has_more_replies",
+                            "total_replies"
+                          ],
+                          "properties": {
+                            "author": {
+                              "type": "object",
+                              "required": [
+                                "id",
+                                "type",
+                                "name",
+                                "avatar",
+                                "is_shop"
+                              ],
+                              "properties": {
+                                "avatar": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "description": "user_id / shop_id",
+                                  "type": "string"
+                                },
+                                "is_shop": {
+                                  "type": "boolean"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "description": "1=user 2=shop",
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "content": {
+                              "type": "string"
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "has_more_replies": {
+                              "type": "boolean"
+                            },
+                            "id": {
+                              "type": "integer"
+                            },
+                            "is_liked": {
+                              "type": "boolean"
+                            },
+                            "is_mentioned_me": {
+                              "type": "boolean"
+                            },
+                            "like_count": {
+                              "type": "integer"
+                            },
+                            "parent_id": {
+                              "type": "integer"
+                            },
+                            "post_id": {
+                              "type": "integer"
+                            },
+                            "reply_count": {
+                              "type": "integer"
+                            },
+                            "reply_to_user": {
+                              "description": "二级回复指向的 @对象",
+                              "type": "object"
+                            },
+                            "root_id": {
+                              "type": "integer"
+                            },
+                            "status": {
+                              "description": "1正常 2已删除 3审核中（拉时已过滤 3）",
+                              "type": "integer"
+                            },
+                            "top_replies": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "total_replies": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      },
+                      "total_replies": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "next_cursor": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shops": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "ShopList",
+        "operationId": "userShopList",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 0,
+            "example": 0,
+            "description": "0全部 1家政 2维修 3开锁 4搬家 5跑腿 6美业 7教育 8美食 9其他",
+            "name": "category",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按区过滤;空则全市",
+            "name": "area_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          },
+          {
+            "type": "string",
+            "description": "可选:按市过滤;city 优先",
+            "name": "city_adcode",
+            "in": "query",
+            "allowEmptyValue": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "name",
+                      "category",
+                      "address",
+                      "latitude",
+                      "longitude",
+                      "phone",
+                      "description",
+                      "images",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "created_at",
+                      "updated_at",
+                      "area_name",
+                      "area_adcode",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "description": "国标 6 位,区/县级",
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "description": "新增:商家所属区名",
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "integer"
+                      },
+                      "city_adcode": {
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "ShopCreate",
+        "operationId": "userShopCreate",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "category",
+                "address",
+                "latitude",
+                "longitude",
+                "phone"
+              ],
+              "properties": {
+                "address": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "images": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "longitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "name": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shops/{id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "ShopDetail",
+        "operationId": "userShopDetail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "address": {
+                  "type": "string"
+                },
+                "area_adcode": {
+                  "description": "国标 6 位,区/县级",
+                  "type": "string"
+                },
+                "area_name": {
+                  "description": "新增:商家所属区名",
+                  "type": "string"
+                },
+                "avatar": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "integer"
+                },
+                "city_adcode": {
+                  "type": "string"
+                },
+                "city_name": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "images": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "reject_reason": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "street_name": {
+                  "type": "string"
+                },
+                "updated_at": {
+                  "type": "string"
+                },
+                "user_id": {
+                  "type": "integer"
+                },
+                "view_count": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "ShopUpdate",
+        "operationId": "userShopUpdate",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "category",
+                "address",
+                "latitude",
+                "longitude",
+                "phone"
+              ],
+              "properties": {
+                "address": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "images": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "longitude": {
+                  "type": "number",
+                  "default": 0,
+                  "example": 0
+                },
+                "name": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/posts": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "MyPosts",
+        "operationId": "userMyPosts",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "type",
+                      "title",
+                      "images",
+                      "content",
+                      "area",
+                      "latitude",
+                      "longitude",
+                      "contact",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "comment_count",
+                      "created_at",
+                      "updated_at",
+                      "area_adcode",
+                      "area_name",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "area": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "city_adcode": {
+                        "description": "跨城市搜索结果带上市 adcode",
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "comment_count": {
+                        "type": "integer"
+                      },
+                      "contact": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "integer"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/posts/{id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "MyPostDetail",
+        "operationId": "userMyPostDetail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "area": {
+                  "type": "string"
+                },
+                "area_adcode": {
+                  "type": "string"
+                },
+                "area_name": {
+                  "type": "string"
+                },
+                "avatar": {
+                  "type": "string"
+                },
+                "city_adcode": {
+                  "description": "跨城市搜索结果带上市 adcode",
+                  "type": "string"
+                },
+                "city_name": {
+                  "type": "string"
+                },
+                "comment_count": {
+                  "type": "integer"
+                },
+                "contact": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "images": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "reject_reason": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                },
+                "street_name": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "integer"
+                },
+                "updated_at": {
+                  "type": "string"
+                },
+                "user_id": {
+                  "type": "integer"
+                },
+                "view_count": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/profile": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "UserProfile",
+        "operationId": "userUserProfile",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "avatar": {
+                  "description": "完整访问 URL(永久有效),前端直接渲染",
+                  "type": "string"
+                },
+                "avatar_file_key": {
+                  "description": "原始 file_key(纯路径),前端缓存 + dirty 比较用",
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "UpdateProfile",
+        "operationId": "userUpdateProfile",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "avatar": {
+                  "type": "string"
+                },
+                "nickname": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "avatar": {
+                  "description": "完整访问 URL(永久有效),前端直接渲染",
+                  "type": "string"
+                },
+                "avatar_file_key": {
+                  "description": "原始 file_key(纯路径),前端缓存 + dirty 比较用",
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/shops": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "MyShops",
+        "operationId": "userMyShops",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "example": 1,
+            "name": "page",
+            "in": "query",
+            "required": true
+          },
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "default": 10,
+            "example": 10,
+            "name": "page_size",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "user_id",
+                      "nickname",
+                      "avatar",
+                      "name",
+                      "category",
+                      "address",
+                      "latitude",
+                      "longitude",
+                      "phone",
+                      "description",
+                      "images",
+                      "status",
+                      "reject_reason",
+                      "view_count",
+                      "created_at",
+                      "updated_at",
+                      "area_name",
+                      "area_adcode",
+                      "street_name",
+                      "city_adcode",
+                      "city_name"
+                    ],
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "area_adcode": {
+                        "description": "国标 6 位,区/县级",
+                        "type": "string"
+                      },
+                      "area_name": {
+                        "description": "新增:商家所属区名",
+                        "type": "string"
+                      },
+                      "avatar": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "integer"
+                      },
+                      "city_adcode": {
+                        "type": "string"
+                      },
+                      "city_name": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "images": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "nickname": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "reject_reason": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "street_name": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "user_id": {
+                        "type": "integer"
+                      },
+                      "view_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-date": "2026-07-21 19:04:24",
+  "x-description": "This is a goctl generated swagger file.",
+  "x-github": "https://github.com/zeromicro/go-zero",
+  "x-go-zero-doc": "https://go-zero.dev/",
+  "x-goctl-version": "1.10.1"
+}
