@@ -334,7 +334,8 @@ func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode s
 		Address   string         `db:"address"`
 		Images    sql.NullString `db:"images"`
 		ViewCount uint64         `db:"view_count"`
-		Nickname  string         `db:"nickname"`
+		// LEFT JOIN user,user 被注销或 nickname 为 NULL 时需兼容
+		Nickname  sql.NullString `db:"nickname"`
 		CreatedAt time.Time      `db:"created_at"`
 	}
 
@@ -354,7 +355,7 @@ func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode s
 			ShopCategory:  r.Category,
 			ShopAddress:   r.Address,
 			ShopViewCount: int(r.ViewCount),
-			ShopNickname:  r.Nickname,
+			ShopNickname:  r.Nickname.String,
 		})
 	}
 	return out, nil
@@ -390,7 +391,8 @@ func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode s
 		Area         string         `db:"area"`
 		ViewCount    uint64         `db:"view_count"`
 		CommentCount uint64         `db:"comment_count"`
-		Nickname     string         `db:"nickname"`
+		// LEFT JOIN user,user 被注销或 nickname 为 NULL 时需兼容
+		Nickname     sql.NullString `db:"nickname"`
 		CreatedAt    time.Time      `db:"created_at"`
 	}
 
@@ -412,7 +414,7 @@ func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode s
 			PostCover:     cover,
 			PostArea:      r.Area,
 			PostViewCount: int(r.ViewCount),
-			PostNickname:  r.Nickname,
+			PostNickname:  r.Nickname.String,
 			PostComment:   int(r.CommentCount),
 		})
 	}
