@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"local-life-api/common/jwtx"
+	"local-life-api/internal/cachex"
 	"local-life-api/internal/errorx"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
@@ -87,6 +88,10 @@ func (l *ShopUpdateLogic) ShopUpdate(req *types.ShopUpdateRequest) (resp *types.
 	}
 
 	// 7. 更新字段,状态回到待审核
+	//   snapshot 旧 adcode:Update 后会被覆盖,跨 adcode 时旧桶首页缓存也得失效
+	oldCityAdcode := shop.CityAdcode
+	oldAreaAdcode := shop.AreaAdcode
+
 	shop.Name = req.Name
 	shop.Category = int64(req.Category)
 	shop.Address = req.Address
@@ -107,6 +112,12 @@ func (l *ShopUpdateLogic) ShopUpdate(req *types.ShopUpdateRequest) (resp *types.
 		l.Errorf("更新商家失败: id=%d, err=%v", id, err)
 		return nil, errorx.ErrInternal
 	}
+
+	// 8. 失效首页混合流缓存(INCR version,旧缓存孤儿化)
+	cachex.InvalidateFeedVersion(l.ctx, l.svcCtx.RedisCli,
+		[]string{"city", "area"},
+		cachex.UniqueNonEmpty(cityAdcode, areaAdcode, oldCityAdcode, oldAreaAdcode),
+	)
 
 	l.Infof("商家更新成功(id=%d, 待审核)", id)
 	return &types.EmptyResponse{}, nil

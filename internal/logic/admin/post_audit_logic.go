@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"local-life-api/internal/cachex"
 	"local-life-api/internal/errorx"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
@@ -39,7 +40,7 @@ func (l *PostAuditLogic) clearBannerRef(jumpType int, targetId int64) {
 //   - status: 2=通过 4=拒绝（types 已校验 oneof=2 4）
 //   - 通过 → C 端 PostList 可见；拒绝 → 不可见，reject_reason 入库
 //   - 允许对已通过的 post 重新拒绝、对已拒绝的重新通过（覆盖式）
-//   - 不主动清缓存（依赖 10s TTL 自然失效）
+//   - 任何 status 变化都会触发首页混合流缓存失效(INCR feed:ver,旧缓存 60s TTL 自然过期)
 func (l *PostAuditLogic) PostAudit(req *types.PostAuditRequest) (resp *types.EmptyResponse, err error) {
 	post, err := l.svcCtx.PostInfoModel.FindOne(l.ctx, uint64(req.Id))
 	if err != nil {
@@ -72,10 +73,16 @@ func (l *PostAuditLogic) PostAudit(req *types.PostAuditRequest) (resp *types.Emp
 		return nil, errorx.ErrInternal
 	}
 
+	// 首页混合流缓存失效:INCR feed:ver,旧缓存 60s TTL 自然过期
+	cachex.InvalidateFeedVersion(l.ctx, l.svcCtx.RedisCli,
+		[]string{"city", "area"},
+		cachex.UniqueNonEmpty(post.CityAdcode, post.AreaAdcode),
+	)
+
 	action := "通过"
 	if req.Status == 4 {
 		action = "拒绝"
 	}
-	l.Infof("post 审核%s成功: id=%d, reason=%q", action, post.Id, req.RejectReason)
+	l.Infof("post 审核%s成功: id=%d, reason=%q", action, post.Id, post.RejectReason)
 	return &types.EmptyResponse{}, nil
 }

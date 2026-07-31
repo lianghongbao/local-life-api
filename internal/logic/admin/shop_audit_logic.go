@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"local-life-api/internal/cachex"
 	"local-life-api/internal/errorx"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
@@ -39,7 +40,7 @@ func (l *ShopAuditLogic) clearBannerRef(jumpType int, targetId int64) {
 //   - status: 2=通过 4=拒绝（types 已校验 oneof=2 4）
 //   - 通过 → C 端 ShopList 可见；拒绝 → 不可见，reject_reason 入库
 //   - 允许对已通过的 shop 重新拒绝、对已拒绝的重新通过（覆盖式）
-//   - 不主动清缓存（依赖 TTL 自然失效）
+//   - 任何 status 变化都会触发首页混合流缓存失效(INCR feed:ver,旧缓存 60s TTL 自然过期)
 //   - reject_reason 字段依赖 add_shop_reject_reason migration
 func (l *ShopAuditLogic) ShopAudit(req *types.ShopAuditRequest) (resp *types.EmptyResponse, err error) {
 	shop, err := l.svcCtx.ShopModel.FindOne(l.ctx, uint64(req.Id))
@@ -71,6 +72,12 @@ func (l *ShopAuditLogic) ShopAudit(req *types.ShopAuditRequest) (resp *types.Emp
 		l.Errorf("更新 shop 审核状态失败: id=%d, status=%d, err=%v", shop.Id, shop.Status, err)
 		return nil, errorx.ErrInternal
 	}
+
+	// 首页混合流缓存失效:INCR feed:ver,旧缓存 60s TTL 自然过期
+	cachex.InvalidateFeedVersion(l.ctx, l.svcCtx.RedisCli,
+		[]string{"city", "area"},
+		cachex.UniqueNonEmpty(shop.CityAdcode, shop.AreaAdcode),
+	)
 
 	action := "通过"
 	if req.Status == 4 {

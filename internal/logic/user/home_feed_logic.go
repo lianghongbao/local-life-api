@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"local-life-api/internal/background"
+	"local-life-api/internal/cachex"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -97,12 +98,12 @@ func NewHomeFeedLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HomeFeed
 	}
 }
 
-// homeFeedCacheKey 按 (scope, adcode, page, size) 分桶 key
+// homeFeedCacheKey 按 (scope, adcode, version, page, size) 分桶 key
 //   - scope = "city"  按 city_adcode 过滤(同城内容)
 //   - scope = "area"  按 area_adcode 过滤(某区内容)
-//   - adcode 空 → 全市
-func homeFeedCacheKey(scope, adcode string, page, pageSize int) string {
-	return fmt.Sprintf("home:feed:v1:%s:%s:p%d:s%d", scope, adcode, page, pageSize)
+//   - adcode 空 → 全市(不参与 version,version=0)
+func homeFeedCacheKey(scope, adcode string, version int64, page, pageSize int) string {
+	return fmt.Sprintf("home:feed:v1:%s:%s:ver%d:p%d:s%d", scope, adcode, version, page, pageSize)
 }
 
 // HomeFeed 首页本地推荐混合流（C 端公开接口，无需登录）
@@ -143,7 +144,8 @@ func (l *HomeFeedLogic) HomeFeed(req *types.HomeFeedRequest) (resp *types.HomeFe
 	}
 
 	// 2. 缓存查
-	cacheKey := homeFeedCacheKey(filterScope, filterAdcode, page, pageSize)
+	version := cachex.GetFeedVersion(l.ctx, l.svcCtx.RedisCli, filterScope, filterAdcode)
+	cacheKey := homeFeedCacheKey(filterScope, filterAdcode, version, page, pageSize)
 	if cached, cacheErr := l.svcCtx.RedisCli.Get(cacheKey); cacheErr == nil && cached != "" {
 		var hit types.HomeFeedResponse
 		if jsonErr := json.Unmarshal([]byte(cached), &hit); jsonErr == nil {

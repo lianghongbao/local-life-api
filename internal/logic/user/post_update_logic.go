@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"local-life-api/common/jwtx"
+	"local-life-api/internal/cachex"
 	"local-life-api/internal/errorx"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
@@ -87,6 +88,11 @@ func (l *PostUpdateLogic) PostUpdate(req *types.PostUpdateRequest) (resp *types.
 	}
 
 	// 7. 更新字段,状态回到待审核
+	//   snapshot 旧 adcode:Update 后 post.CityAdcode/AreaAdcode 已被覆盖,
+	//   若用户改坐标导致跨 adcode,旧桶的首页缓存也得失效(老用户停留旧城市看到脏数据)
+	oldCityAdcode := post.CityAdcode
+	oldAreaAdcode := post.AreaAdcode
+
 	post.Type = int64(req.Type)
 	post.Title = req.Title
 	post.Content = sql.NullString{String: req.Content, Valid: req.Content != ""}
@@ -107,6 +113,13 @@ func (l *PostUpdateLogic) PostUpdate(req *types.PostUpdateRequest) (resp *types.
 		l.Errorf("更新 post 失败: id=%d, err=%v", id, err)
 		return nil, errorx.ErrInternal
 	}
+
+	// 8. 失效首页混合流缓存(INCR version,旧缓存孤儿化,60s TTL 消失)
+	//   失败不阻塞主链路 —— 写库已成功,version 失效失败最差 60s 自然过期
+	cachex.InvalidateFeedVersion(l.ctx, l.svcCtx.RedisCli,
+		[]string{"city", "area"},
+		cachex.UniqueNonEmpty(cityAdcode, areaAdcode, oldCityAdcode, oldAreaAdcode),
+	)
 
 	l.Infof("信息更新成功(id=%d, 待审核)", id)
 	return &types.EmptyResponse{}, nil

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"local-life-api/common/jwtx"
+	"local-life-api/internal/cachex"
 	"local-life-api/internal/errorx"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
@@ -78,6 +79,13 @@ func (l *PostOfflineLogic) PostOffline(req *types.IdRequest) (resp *types.EmptyR
 		l.Errorf("下架帖子失败: id=%d, err=%v", req.Id, err)
 		return nil, errorx.ErrInternal
 	}
+
+	// 首页混合流缓存失效:下架后 status=3 不再出现在首页候选池,
+	// INCR feed:ver 让旧首页缓存(还在展示这条)立即失效
+	cachex.InvalidateFeedVersion(l.ctx, l.svcCtx.RedisCli,
+		[]string{"city", "area"},
+		cachex.UniqueNonEmpty(post.CityAdcode, post.AreaAdcode),
+	)
 
 	l.Infof("下架帖子成功: id=%d, openid=%s", req.Id, openid)
 	return &types.EmptyResponse{}, nil
