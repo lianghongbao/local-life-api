@@ -389,7 +389,7 @@ type HomeBannerItem struct {
 
 type HomeFeedItem struct {
 	Type             string  `json:"type,options=shop|post"` // shop=本地小店, post=用户发帖
-	Weight           float64 `json:"weight,optional"`        // 推荐分(用于联调排序效果)
+	Weight           float64 `json:"weight,optional"`        // 推荐分（前端调试用）
 	ShopId           int64   `json:"shop_id,optional"`
 	ShopName         string  `json:"shop_name,optional"`
 	ShopCover        string  `json:"shop_cover,optional"`
@@ -416,6 +416,7 @@ type HomeFeedRequest struct {
 	PageSize   int64  `form:"page_size,default=12"` // 默认 12 条:小店/发帖各占一半
 	AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
 	CityAdcode string `form:"city_adcode,optional"` // 可选:按市过滤;city 优先
+	Keyword    string `form:"keyword,optional"`     // 可选:关键词搜索(帖子标题+正文 / 商家名+地址+介绍);空=不搜
 }
 
 type HomeFeedResponse struct {
@@ -535,6 +536,7 @@ type PostListRequest struct {
 	Type       int    `form:"type,default=0"`       // 0全部 1二手 2租房 3招聘 4求助 9其他 (公开接口只查已通过)
 	AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
 	CityAdcode string `form:"city_adcode,optional"` // 可选:按市过滤;city 优先
+	Keyword    string `form:"keyword,optional"`     // 可选:关键词搜索(标题+正文,MySQL ngram 全文索引);空=不搜
 }
 
 type PostListResponse struct {
@@ -595,7 +597,7 @@ type ShopItem struct {
 	ViewCount    int     `json:"view_count"`
 	CreatedAt    string  `json:"created_at"`
 	UpdatedAt    string  `json:"updated_at"`
-	AreaName     string  `json:"area_name"`   // 新增:商家所属区名
+	AreaName     string  `json:"area_name"`   // 商家所属区名
 	AreaAdcode   string  `json:"area_adcode"` // 国标 6 位,区/县级
 	StreetName   string  `json:"street_name"`
 	CityAdcode   string  `json:"city_adcode"`
@@ -607,6 +609,7 @@ type ShopListRequest struct {
 	Category   int    `form:"category,default=0"`   // 0全部 1家政 2维修 3开锁 4搬家 5跑腿 6美业 7教育 8美食 9其他
 	AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
 	CityAdcode string `form:"city_adcode,optional"` // 可选:按市过滤;city 优先
+	Keyword    string `form:"keyword,optional"`     // 可选:关键词搜索(店名+地址+介绍,MySQL ngram 全文索引);空=不搜
 }
 
 type ShopListResponse struct {

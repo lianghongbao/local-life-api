@@ -11,6 +11,7 @@ import (
 
 	"local-life-api/internal/background"
 	"local-life-api/internal/cachex"
+	"local-life-api/internal/search"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -65,6 +66,8 @@ type feedRow struct {
 	Id        uint64
 	Weight    float64
 	CreatedAt time.Time
+	// SearchScore 全文检索相关度分(仅搜索模式 > 0),搜索时用作 Weight
+	SearchScore float64
 	// shop 字段
 	ShopName      string
 	ShopCover     string
@@ -98,12 +101,17 @@ func NewHomeFeedLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HomeFeed
 	}
 }
 
-// homeFeedCacheKey 按 (scope, adcode, version, page, size) 分桶 key
+// homeFeedCacheKey 按 (scope, adcode, version, kwHash, page, size) 分桶 key
 //   - scope = "city"  按 city_adcode 过滤(同城内容)
 //   - scope = "area"  按 area_adcode 过滤(某区内容)
 //   - adcode 空 → 全市(不参与 version,version=0)
-func homeFeedCacheKey(scope, adcode string, version int64, page, pageSize int) string {
-	return fmt.Sprintf("home:feed:v1:%s:%s:ver%d:p%d:s%d", scope, adcode, version, page, pageSize)
+//   - kwHash = 关键词哈希(search.CacheKeyHash),空关键词时为 "0"
+//     必须参与 key：否则搜"二手"会命中搜"租房"的首页缓存
+func homeFeedCacheKey(scope, adcode string, version int64, kwHash string, page, pageSize int) string {
+	if kwHash == "" {
+		kwHash = "0"
+	}
+	return fmt.Sprintf("home:feed:v1:%s:%s:ver%d:kw%s:p%d:s%d", scope, adcode, version, kwHash, page, pageSize)
 }
 
 // HomeFeed 首页本地推荐混合流（C 端公开接口，无需登录）
@@ -121,6 +129,8 @@ func homeFeedCacheKey(scope, adcode string, version int64, page, pageSize int) s
 //   - view_count 不读 mysql(view_count 滞后 30s),改走 Redis 实时 incr 累加值
 //   - adcode 过滤:city 优先 > area > 空(全市),与现有 HomeIndex / PostList 一致
 //   - 类型相关字段(shop_* / post_*)用 json:"optional" 标签,前端按 type 字段分发渲染
+//   - keyword 搜索:非空时 shop/post 两个候选池都按 FULLTEXT 过滤,
+//     且改用相关度排序(搜索命中优先),不再用 view_count×时间衰减
 func (l *HomeFeedLogic) HomeFeed(req *types.HomeFeedRequest) (resp *types.HomeFeedResponse, err error) {
 	// 0. 兜底
 	if req == nil {
@@ -143,9 +153,23 @@ func (l *HomeFeedLogic) HomeFeed(req *types.HomeFeedRequest) (resp *types.HomeFe
 		filterScope = "city"
 	}
 
-	// 2. 缓存查
+	// 2. 关键词规范化:空串 = 不搜索(正常浏览);过短(单字) = 搜不了,返回空列表
+	//   - ngram 默认 token_size=2,单字查询恒命中 0 行
+	//   - 若把单字当"不搜索"处理,用户会看到全量混合流,以为搜索没生效
+	keyword := search.Normalize(req.Keyword)
+	if search.TooShort(keyword) {
+		// 关键词太短:直接返回空列表(不进 DB,也不写缓存——这是异常输入不是可缓存结果)
+		return &types.HomeFeedResponse{
+			List:    []types.HomeFeedItem{},
+			HasMore: false,
+		}, nil
+	}
+	searching := search.IsValid(keyword)
+	kwHash := search.CacheKeyHash(keyword)
+
+	// 3. 缓存查
 	version := cachex.GetFeedVersion(l.ctx, l.svcCtx.RedisCli, filterScope, filterAdcode)
-	cacheKey := homeFeedCacheKey(filterScope, filterAdcode, version, page, pageSize)
+	cacheKey := homeFeedCacheKey(filterScope, filterAdcode, version, kwHash, page, pageSize)
 	if cached, cacheErr := l.svcCtx.RedisCli.Get(cacheKey); cacheErr == nil && cached != "" {
 		var hit types.HomeFeedResponse
 		if jsonErr := json.Unmarshal([]byte(cached), &hit); jsonErr == nil {
@@ -155,13 +179,13 @@ func (l *HomeFeedLogic) HomeFeed(req *types.HomeFeedRequest) (resp *types.HomeFe
 		}
 	}
 
-	// 3. 取候选池
-	shops, err := l.queryShopCandidates(l.ctx, filterScope, filterAdcode)
+	// 4. 取候选池
+	shops, err := l.queryShopCandidates(l.ctx, filterScope, filterAdcode, keyword)
 	if err != nil {
 		l.Errorf("HomeFeed 查询店铺候选池失败: err=%v", err)
 		return nil, err
 	}
-	posts, err := l.queryPostCandidates(l.ctx, filterScope, filterAdcode)
+	posts, err := l.queryPostCandidates(l.ctx, filterScope, filterAdcode, keyword)
 	if err != nil {
 		l.Errorf("HomeFeed 查询帖子候选池失败: err=%v", err)
 		return nil, err
@@ -194,21 +218,32 @@ func (l *HomeFeedLogic) HomeFeed(req *types.HomeFeedRequest) (resp *types.HomeFe
 		}
 	}
 
-	// 5. 算权重(时间衰减)
+	// 5. 算权重
+	//    搜索模式:权重 = MATCH 相关度(搜索命中优先,与浏览量无关)
+	//    非搜索模式:权重 = view_count × exp(-age_days / 7.0)(时间衰减)
 	now := time.Now()
 	all := make([]feedRow, 0, len(shops)+len(posts))
 	for _, s := range shops {
 		vc := shopVC[s.Id]
-		s.Weight = calcWeight(vc, now.Sub(s.CreatedAt))
+		if searching {
+			s.Weight = s.SearchScore
+		} else {
+			s.Weight = calcWeight(vc, now.Sub(s.CreatedAt))
+		}
 		all = append(all, s)
 	}
 	for _, p := range posts {
 		vc := postVC[p.Id]
-		p.Weight = calcWeight(vc, now.Sub(p.CreatedAt))
+		if searching {
+			p.Weight = p.SearchScore
+		} else {
+			p.Weight = calcWeight(vc, now.Sub(p.CreatedAt))
+		}
 		all = append(all, p)
 	}
 
 	// 6. 合并排序:weight desc,同分按 id desc
+	//    搜索模式下 weight 是相关度分,跨表可比(MySQL 同一次查询算出的 MATCH 分数)
 	sort.Slice(all, func(i, j int) bool {
 		if all[i].Weight != all[j].Weight {
 			return all[i].Weight > all[j].Weight
@@ -309,15 +344,30 @@ func (l *HomeFeedLogic) cacheHomeFeed(key string, resp *types.HomeFeedResponse) 
 //   - adcode 过滤走 city_adcode(优先)/area_adcode,与 HomeIndex / ShopList 一致
 //   - 封面:shop 表没有 cover 列,只有 images(JSON 数组字符串),用 extractFirstImage 取第一张
 //   - nickname:shop 表没有昵称,LEFT JOIN user 表取创建者昵称(LEFT JOIN 兼容用户已注销的情况)
-func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode string) ([]feedRow, error) {
+//   - keyword 非空:按 FULLTEXT 搜店名+地址+介绍,并按相关度排(候选池取相关度 topN)
+func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode string, keyword string) ([]feedRow, error) {
+	searching := keyword != ""
+	var boolQuery string
+	if searching {
+		boolQuery = search.BuildBooleanQuery(keyword)
+	}
 	query := `
 		SELECT s.id, s.name, s.category, s.address, s.images, s.view_count,
 		       u.nickname, s.created_at
+	`
+	args := []interface{}{}
+	if searching {
+		query += ", MATCH(s.name, s.address, s.description) AGAINST (? IN BOOLEAN MODE) AS search_score"
+		args = append(args, boolQuery)
+	} else {
+		// 非搜索模式补常量 0,保证两条路径 SELECT 列数一致
+		query += ", 0 AS search_score"
+	}
+	query += `
 		FROM shop s
 		LEFT JOIN user u ON u.id = s.user_id
 		WHERE s.status = 2
 	`
-	args := []interface{}{}
 	if adcode != "" {
 		if scope == "city" {
 			query += " AND s.city_adcode = ?"
@@ -326,7 +376,13 @@ func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode s
 		}
 		args = append(args, adcode)
 	}
-	query += " ORDER BY s.view_count DESC, s.id DESC LIMIT ?"
+	if searching {
+		query += " AND MATCH(s.name, s.address, s.description) AGAINST (? IN BOOLEAN MODE)"
+		args = append(args, boolQuery)
+		query += " ORDER BY search_score DESC, s.view_count DESC, s.id DESC LIMIT ?"
+	} else {
+		query += " ORDER BY s.view_count DESC, s.id DESC LIMIT ?"
+	}
 	args = append(args, homeFeedCandidateLimit)
 
 	type shopRow struct {
@@ -337,8 +393,9 @@ func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode s
 		Images    sql.NullString `db:"images"`
 		ViewCount uint64         `db:"view_count"`
 		// LEFT JOIN user,user 被注销或 nickname 为 NULL 时需兼容
-		Nickname  sql.NullString `db:"nickname"`
-		CreatedAt time.Time      `db:"created_at"`
+		Nickname   sql.NullString `db:"nickname"`
+		CreatedAt  time.Time      `db:"created_at"`
+		SearchScore float64       `db:"search_score"`
 	}
 
 	var rows []shopRow
@@ -352,6 +409,7 @@ func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode s
 			Type:          "shop",
 			Id:            r.Id,
 			CreatedAt:     r.CreatedAt,
+			SearchScore:   r.SearchScore,
 			ShopName:      r.Name,
 			ShopCover:     extractFirstImage(r.Images.String), // 从 images JSON 数组取第一张
 			ShopCategory:  r.Category,
@@ -365,15 +423,30 @@ func (l *HomeFeedLogic) queryShopCandidates(ctx context.Context, scope, adcode s
 
 // queryPostCandidates 查 post_info 候选池(status=2,view_count DESC LIMIT 60)
 //   - 同样 LEFT JOIN user 取昵称;与 queryShopCandidates 保持一致
-func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode string) ([]feedRow, error) {
+//   - keyword 非空:按 FULLTEXT 搜标题+正文,并按相关度排(候选池取相关度 topN)
+func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode string, keyword string) ([]feedRow, error) {
+	searching := keyword != ""
+	var boolQuery string
+	if searching {
+		boolQuery = search.BuildBooleanQuery(keyword)
+	}
 	query := `
 		SELECT p.id, p.type, p.title, p.images, p.area, p.view_count, p.comment_count,
 		       u.nickname, p.created_at
+	`
+	args := []interface{}{}
+	if searching {
+		query += ", MATCH(p.title, p.content) AGAINST (? IN BOOLEAN MODE) AS search_score"
+		args = append(args, boolQuery)
+	} else {
+		// 非搜索模式补常量 0,保证两条路径 SELECT 列数一致
+		query += ", 0 AS search_score"
+	}
+	query += `
 		FROM post_info p
 		LEFT JOIN user u ON u.id = p.user_id
 		WHERE p.status = 2
 	`
-	args := []interface{}{}
 	if adcode != "" {
 		if scope == "city" {
 			query += " AND p.city_adcode = ?"
@@ -382,7 +455,13 @@ func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode s
 		}
 		args = append(args, adcode)
 	}
-	query += " ORDER BY p.view_count DESC, p.id DESC LIMIT ?"
+	if searching {
+		query += " AND MATCH(p.title, p.content) AGAINST (? IN BOOLEAN MODE)"
+		args = append(args, boolQuery)
+		query += " ORDER BY search_score DESC, p.view_count DESC, p.id DESC LIMIT ?"
+	} else {
+		query += " ORDER BY p.view_count DESC, p.id DESC LIMIT ?"
+	}
 	args = append(args, homeFeedCandidateLimit)
 
 	type postRow struct {
@@ -396,6 +475,7 @@ func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode s
 		// LEFT JOIN user,user 被注销或 nickname 为 NULL 时需兼容
 		Nickname     sql.NullString `db:"nickname"`
 		CreatedAt    time.Time      `db:"created_at"`
+		SearchScore  float64        `db:"search_score"`
 	}
 
 	var rows []postRow
@@ -411,6 +491,7 @@ func (l *HomeFeedLogic) queryPostCandidates(ctx context.Context, scope, adcode s
 			Type:          "post",
 			Id:            r.Id,
 			CreatedAt:     r.CreatedAt,
+			SearchScore:   r.SearchScore,
 			PostType:      r.Type,
 			PostTitle:     r.Title,
 			PostCover:     cover,

@@ -62,6 +62,7 @@ type PostListRequest {
     Type       int    `form:"type,default=0"` // 0全部 1二手 2租房 3招聘 4求助 9其他 (公开接口只查已通过)
     AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
     CityAdcode  string `form:"city_adcode,optional"`  // 可选:按市过滤;city 优先
+    Keyword    string `form:"keyword,optional"` // 可选:关键词搜索(标题+正文,MySQL ngram 全文索引);空=不搜
 }
 
 type PostAuditRequest {

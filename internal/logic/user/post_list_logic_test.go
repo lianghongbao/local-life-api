@@ -30,6 +30,9 @@ func postListRowCount(t reflect.Type) int {
 // 否则报 ErrNotMatchDestination("not matching destination to scan"),500。
 //
 // 加新列时(post_info 加字段,例如区划四字段):SELECT 与 postListRow 必须同步增减,任一边漏改都炸。
+//
+// 注意:搜索模式下 SELECT 多一列 MATCH 相关度(search_score),非搜索模式补常量 0,
+// 两条路径列数都是 19。
 func TestPostListRow_字段数匹配SELECT(t *testing.T) {
 	// post_list_logic.go 当前 SELECT 的列(以换行 + 逗号拆开,手工列)
 	const selectColumns = `
@@ -39,11 +42,12 @@ func TestPostListRow_字段数匹配SELECT(t *testing.T) {
 		p.area, p.latitude, p.longitude, p.contact,
 		p.status,
 		DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
-		p.area_adcode, p.area_name, p.street_name, p.city_adcode
+		p.area_adcode, p.area_name, p.street_name, p.city_adcode,
+		MATCH(p.title, p.content) AGAINST (? IN BOOLEAN MODE) AS search_score
 	`
 	// 把 SQL 切成列名列表(去注释 / 逗号 / 换行)
 	cols := splitSelectColumns(selectColumns)
-	wantCols := 18
+	wantCols := 19
 	if len(cols) != wantCols {
 		t.Fatalf("SQL 列数变了(预期 %d, 实际 %d): %v", wantCols, len(cols), cols)
 	}

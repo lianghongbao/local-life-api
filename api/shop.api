@@ -61,6 +61,7 @@ type ShopListRequest {
     Category   int    `form:"category,default=0"` // 0全部 1家政 2维修 3开锁 4搬家 5跑腿 6美业 7教育 8美食 9其他
     AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
     CityAdcode  string `form:"city_adcode,optional"`  // 可选:按市过滤;city 优先
+    Keyword    string `form:"keyword,optional"` // 可选:关键词搜索(店名+地址+介绍,MySQL ngram 全文索引);空=不搜
 }
 
 type ShopAuditRequest {

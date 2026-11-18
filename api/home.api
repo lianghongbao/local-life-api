@@ -58,6 +58,7 @@ type HomeFeedRequest {
 	PageSize   int64  `form:"page_size,default=12"` // 默认 12 条:小店/发帖各占一半
 	AreaAdcode string `form:"area_adcode,optional"` // 可选:按区过滤;空则全市
 	CityAdcode string `form:"city_adcode,optional"` // 可选:按市过滤;city 优先
+	Keyword    string `form:"keyword,optional"` // 可选:关键词搜索(帖子标题+正文 / 商家名+地址+介绍);空=不搜
 }
 
 type HomeFeedResponse {

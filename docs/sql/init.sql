@@ -69,7 +69,9 @@ CREATE TABLE `post_info` (
     KEY `idx_type_status` (`type`, `status`),
     KEY `idx_created_at` (`created_at`),
     KEY `idx_post_area_status_created` (`area_adcode`, `status`, `created_at`),
-    KEY `idx_post_city_status_created` (`city_adcode`, `status`, `created_at`)
+    KEY `idx_post_city_status_created` (`city_adcode`, `status`, `created_at`),
+    -- 搜索:标题+正文中文全文索引(ngram 解析器,默认解析器对中文无效)
+    FULLTEXT KEY `ft_post_search` (`title`, `content`) WITH PARSER ngram
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='信息发布表';
 
 -- ============================================================
@@ -101,7 +103,9 @@ CREATE TABLE `shop` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_category_status` (`category`, `status`),
     KEY `idx_shop_area_status_created` (`area_adcode`, `status`, `created_at`),
-    KEY `idx_shop_city_status_created` (`city_adcode`, `status`, `created_at`)
+    KEY `idx_shop_city_status_created` (`city_adcode`, `status`, `created_at`),
+    -- 搜索:店名+地址+介绍中文全文索引(ngram 解析器,默认解析器对中文无效)
+    FULLTEXT KEY `ft_shop_search` (`name`, `address`, `description`) WITH PARSER ngram
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商家黄页表';
 
 -- ============================================================

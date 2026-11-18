@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/search"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -33,19 +34,26 @@ const (
 	shopListEmptyCacheTTLSecs = 5
 )
 
-// shopListCacheKey 缓存 key：shops:cat{cat}:area{adcode}:p{page}:s{size}
+// shopListCacheKey 缓存 key：shops:cat{cat}:area{adcode}:kw{kwHash}:p{page}:s{size}
 //   - cat=0 表示全部，独立 namespace
 //   - adcode="" 表示"全市"，仍作为 key 一部分（独立 namespace）
-func shopListCacheKey(category int, adcode string, page, pageSize int) string {
-	return fmt.Sprintf("shops:cat%d:area%s:p%d:s%d", category, adcode, page, pageSize)
+//   - kwHash=关键词哈希(search.CacheKeyHash)，空关键词时为 "0"
+//     必须参与 key：否则搜"家政"会命中搜"维修"的缓存
+func shopListCacheKey(category int, adcode string, kwHash string, page, pageSize int) string {
+	if kwHash == "" {
+		kwHash = "0"
+	}
+	return fmt.Sprintf("shops:cat%d:area%s:kw%s:p%d:s%d", category, adcode, kwHash, page, pageSize)
 }
 
 // ShopList C 端公开商家列表
 //   - 仅展示 status=2（已通过）
 //   - category=0 全部，否则按 category 精确过滤
 //   - adcode 可选：空=全市；非空=按区过滤
-//   - 按 view_count DESC, id DESC 排序（热门优先）
-//   - Redis 缓存 10s，按 (category, adcode, page, size) 分桶
+//   - keyword 可选：非空时按 MySQL FULLTEXT(ngram) 搜店名+地址+介绍，
+//     并改用相关度排序（MATCH score DESC, view_count DESC）
+//   - 无 keyword 时按 view_count DESC, id DESC 排序（热门优先）
+//   - Redis 缓存 10s，按 (category, adcode, keyword, page, size) 分桶
 func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopListResponse, err error) {
 	// 1. 分页参数兜底
 	page := req.Page
@@ -66,9 +74,28 @@ func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopLi
 	if req.CityAdcode != "" {
 		adcode = req.CityAdcode
 	}
+	// 关键词规范化：空串 = 不搜索(正常浏览)；过短(单字) = 搜不了,返回空列表
+	//   - ngram 默认 token_size=2,单字查询恒命中 0 行
+	//   - 若把单字当"不搜索"处理,用户会看到全量列表,以为搜索没生效
+	keyword := search.Normalize(req.Keyword)
+	tooShort := search.TooShort(keyword)
+	if tooShort {
+		// 关键词太短:直接返回空列表(不进 DB,也不写缓存——这是异常输入不是可缓存结果)
+		return &types.ShopListResponse{
+			List:  []types.ShopItem{},
+			Total: 0,
+		}, nil
+	}
+	searching := search.IsValid(keyword)
+	// BOOLEAN 查询串：多词用 + 要求全部命中（AND），单词原样必含
+	var boolQuery string
+	if searching {
+		boolQuery = search.BuildBooleanQuery(keyword)
+	}
+	kwHash := search.CacheKeyHash(keyword)
 
-	// 2. 查缓存（按 category + adcode + page + size 分桶）
-	cacheKey := shopListCacheKey(category, adcode, page, pageSize)
+	// 2. 查缓存（按 category + adcode + keyword + page + size 分桶）
+	cacheKey := shopListCacheKey(category, adcode, kwHash, page, pageSize)
 	cached, cacheErr := l.svcCtx.RedisCli.Get(cacheKey)
 	if cacheErr == nil && cached != "" {
 		var hit types.ShopListResponse
@@ -80,6 +107,7 @@ func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopLi
 	}
 
 	// 3. 动态拼 COUNT SQL：category=0 不加 category 过滤；adcode="" 不加 adcode 过滤
+	//    搜索模式额外加 MATCH ... AGAINST 条件（COUNT 里的 MATCH 也走全文索引）
 	var total int64
 	var countSQL string
 	var countArgs []any
@@ -98,9 +126,13 @@ func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopLi
 			}
 			countArgs = append(countArgs, adcode)
 		}
+		if searching {
+			countSQL += " AND MATCH(`name`, `address`, `description`) AGAINST (? IN BOOLEAN MODE)"
+			countArgs = append(countArgs, boolQuery)
+		}
 	}
 	if err := l.svcCtx.DBConn.QueryRowCtx(l.ctx, &total, countSQL, countArgs...); err != nil {
-		l.Errorf("查询 ShopList 总数失败: category=%d, area=%s, err=%v", category, adcode, err)
+		l.Errorf("查询 ShopList 总数失败: category=%d, area=%s, keyword=%s, err=%v", category, adcode, keyword, err)
 		return nil, errorx.ErrInternal
 	}
 
@@ -116,19 +148,30 @@ func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopLi
 
 	// 5. 分页查询
 	//    view_count 不再 SELECT（可选优化：保持与现状一致，仍 SELECT 让排序在 DB 层完成）
-	//    动态拼 WHERE 条件：category / adcode 任意可选
+	//    动态拼 WHERE 条件：category / adcode / keyword 任意可选
 	//    SELECT 区划四字段(area_name/area_adcode/street_name/city_adcode),
 	//    让 C 端 list / detail 透出区名 + adcode,后续做"同区推荐"不用再回 DB 查。
+	//    搜索模式额外 SELECT 一列 MATCH 相关度（search_score）供排序用
 	listSQL := `
 		SELECT
 			id, name, category, address, latitude, longitude, phone, description, images,
 			status, view_count,
 			area_name, area_adcode, street_name, city_adcode,
 			DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at
+	`
+	listArgs := []any{}
+	if searching {
+		// 搜索模式：多选一列 MATCH 相关度
+		listSQL += ", MATCH(name, address, description) AGAINST (? IN BOOLEAN MODE) AS search_score"
+		listArgs = append(listArgs, boolQuery)
+	} else {
+		// 非搜索模式：补一列常量 0，保证 SELECT 列数与 shopRow 字段数恒等
+		listSQL += ", 0 AS search_score"
+	}
+	listSQL += `
 		FROM shop
 		WHERE status = 2
 	`
-	listArgs := []any{}
 	if category != 0 {
 		listSQL += " AND category = ?"
 		listArgs = append(listArgs, category)
@@ -141,7 +184,16 @@ func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopLi
 		}
 		listArgs = append(listArgs, adcode)
 	}
-	listSQL += " ORDER BY view_count DESC, id DESC LIMIT ? OFFSET ?"
+	if searching {
+		listSQL += " AND MATCH(name, address, description) AGAINST (? IN BOOLEAN MODE)"
+		listArgs = append(listArgs, boolQuery)
+	}
+	if searching {
+		// 搜索模式：相关度优先，同分按浏览数多的在前
+		listSQL += " ORDER BY search_score DESC, view_count DESC, id DESC LIMIT ? OFFSET ?"
+	} else {
+		listSQL += " ORDER BY view_count DESC, id DESC LIMIT ? OFFSET ?"
+	}
 	listArgs = append(listArgs, pageSize, offset)
 
 	type shopRow struct {
@@ -161,6 +213,7 @@ func (l *ShopListLogic) ShopList(req *types.ShopListRequest) (resp *types.ShopLi
 		StreetName  string         `db:"street_name"`
 		CityAdcode  string         `db:"city_adcode"`
 		CreatedAt   string         `db:"created_at"`
+		SearchScore float64        `db:"search_score"`
 	}
 
 	var rows []shopRow
