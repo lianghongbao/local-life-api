@@ -69,10 +69,19 @@ jobs:
           EFFECTIVE_GOLANG_TAG="${BASE_GOLANG_TAG:-golang-1.25-alpine}"
           EFFECTIVE_ALPINE_TAG="${BASE_ALPINE_TAG:-alpine-3.21}"
 
+          # --provenance=false --sbom=false 必须保留:
+          #   BuildKit(v0.32+) 默认会在镜像 index 里附带一个
+          #   application/vnd.oci.empty.v1+json 的 attestation manifest。
+          #   阿里云 ACR 个人版不认这个 media type,push 直接被拒:
+          #     denied: unknown manifest class for application/vnd.oci.empty.v1+json
+          #   关掉证明信息后只推普通 image manifest,ACR 才能收。
+
           docker buildx build \
             --no-cache \
             --pull \
             --platform linux/amd64 \
+            --provenance=false \
+            --sbom=false \
             --build-arg "REGISTRY=${REGISTRY}" \
             --build-arg "GOLANG_TAG=${EFFECTIVE_GOLANG_TAG}" \
             --build-arg "ALPINE_TAG=${EFFECTIVE_ALPINE_TAG}" \
