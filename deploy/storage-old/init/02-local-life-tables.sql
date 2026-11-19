@@ -13,11 +13,11 @@
 --     并把同样变更同步回本文件,保持 dev / 生产结构一致
 --
 -- 与 docs/sql/init.sql 的差异:
---   本文件是共享底座(deploy/infra)的 initdb.d 脚本,内容同源。
+--   本文件是 deploy/init 的 initdb.d 脚本,内容同源。
 --   两处不同:
 --     1. 不建库 —— 建库在 01-create-databases.sql,避免两个脚本抢建
 --     2. 建表用 CREATE TABLE IF NOT EXISTS,不用 DROP TABLE。
---        initdb.d 的脚本在数据目录为空时才跑,但万一底座重建后
+--        initdb.d 的脚本在数据目录为空时才跑,但万一容器重建后
 --        又对上老数据,DROP TABLE 会把业务数据抹掉。宁可报错也不要静默删数据。
 -- ============================================================
 

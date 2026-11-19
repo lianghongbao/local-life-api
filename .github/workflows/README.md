@@ -1,6 +1,6 @@
 # GitHub Actions 部署配置
 
-`deploy.yml` 是 CI/CD 模板,通过 GitHub Secrets + Variables 注入环境差异,可直接复制到任何 go-zero / 类似后端项目复用。
+`deploy.yml` 是本项目的 CI/CD 流水线,通过 GitHub Secrets + Variables 注入环境差异。
 
 ## 架构
 
@@ -11,27 +11,27 @@ push main
     │
     ▼
 build (GitHub-hosted runner)
-    ├─ docker build + push  →  公网镜像仓库
-    └─ 输出 image_tag
+    └─ docker buildx build + push → 镜像仓库
     │
     ▼ needs: build
 deploy (self-hosted runner on ECS)
-    ├─ docker pull
-    ├─ docker compose up -d  (--no-deps,不重启依赖服务)
-    └─ health check
+    ├─ docker pull + re-tag
+    ├─ 同步 compose 到部署目录
+    ├─ 确认 mysql / redis 在跑
+    └─ docker compose up -d + health check
 ```
 
 - **build 跑在 GitHub-hosted runner**(出网方便,适合 docker buildx + 推镜像)
 - **deploy 跑在 self-hosted runner**(在 ECS 内,持有 ECS 部署目录的写权限)
 
-## Vars(明文,每个项目改这些)
+## Vars(明文)
 
 路径:`repo Settings → Secrets and variables → Actions → Variables`
 
 | Var | 含义 |
 | ---- | ---- |
-| `REGISTRY_HOST` | 镜像仓库公网端点域名,例 `crpi-XXXX.personal.cr.aliyuncs.com` |
-| `REGISTRY_NAMESPACE` | 仓库 namespace,例 `<your-ns>/<your-repo-prefix>` |
+| `ACR_REGISTRY_HOST` | 镜像仓库公网端点域名,例 `crpi-XXXX.personal.cr.aliyuncs.com` |
+| `ACR_NAMESPACE` | 仓库 namespace,例 `<your-ns>/<your-repo-prefix>` |
 | `IMAGE_NAME` | 本项目镜像名,例 `local-life-api` |
 | `APP_CONTAINER` | compose 里 `container_name`,健康检查寻址用 |
 | `BASE_GOLANG_TAG` | builder 基础镜像 tag(Dockerfile 的 `ARG GOLANG_TAG`) |
@@ -48,30 +48,25 @@ deploy (self-hosted runner on ECS)
 
 | Secret | 用途 |
 |--------|------|
-| `REGISTRY_USERNAME` | 镜像仓库的 RAM 用户名 |
-| `REGISTRY_PASSWORD` | 镜像仓库的 RAM 密码 |
+| `ACR_USERNAME` | 镜像仓库的 RAM 用户名(build job 推镜像用) |
+| `ACR_PASSWORD` | 镜像仓库的 RAM 密码 |
 
-## ECS self-hosted runner 的 `deploy/` 目录
+> deploy job 拉镜像用的是 **ECS 上 `${DEPLOY_DIR}/.env` 里的
+> `REGISTRY_USERNAME` / `REGISTRY_PASSWORD`** —— 跟 build job 的那对是两套凭证。
 
-首次部署前要准备的本地文件:
+## ECS 上要准备的东西
 
-| 文件 | 作用 |
+首次部署前:
+
+| 位置 | 内容 |
 |------|------|
-| `.env` | 应用凭证 + 镜像仓库拉取凭证。**至少** 含 `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` / `REGISTRY_HOST` / `REGISTRY_NAMESPACE` / `IMAGE_NAME` |
-| `docker-compose.yml` | 由 deploy job 自动从仓库同步过来,**不需要**在 ECS 上手维护 |
+| `${DEPLOY_DIR}/.env` | 应用凭证 + 镜像仓库拉取凭证。**至少** 含 `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` / `MYSQL_ROOT_PASSWORD` / `REDIS_PASSWORD` |
+| `${DEPLOY_DIR}/docker-compose.yml` | 业务容器。由 deploy job 自动从仓库同步,**不需要**在 ECS 上手维护 |
+| `${DEPLOY_DIR}/mysql/` `redis/` | 独立部署的 MySQL / Redis compose。同样由 deploy job 同步 |
+| `${DEPLOY_DIR}/db/` | MySQL 建库建表脚本。同样由 deploy job 同步 |
 
-首次 deploy 会从仓库 `.env.example` 复制成 `.env`,之后**手动填真实凭证**才能正常启动。
-
-## 自定义步骤
-
-复用到新项目时:
-
-1. 复制 `deploy.yml` 到目标仓库的 `.github/workflows/deploy.yml`
-2. 配好上面的 Vars + Secrets(11 + 2)
-3. ECS 上的 self-hosted runner 装好、注册好,**标签**必须命中 `RUNNER_LABELS` 里写的那一组
-4. base 镜像(golang / alpine / 任何外部依赖镜像)已经 sync 到 `${REGISTRY_NAMESPACE}`
-5. 项目里要有 `Dockerfile`、`docker-compose.yml`、`.env.example`,再加 `entrypoint.sh`(可选,看主程序是否需要非 root 用户写日志目录)
-6. push 代码即触发整个 build + deploy 流水线
+`deploy/` 下的 `.env` 首次 deploy 会从仓库 `.env.example` 复制过来,
+之后**必须手动填真实凭证**才能正常启动。
 
 ## 镜像 tag 约定
 
@@ -99,3 +94,5 @@ ECS 本地 re-tag 成 `${IMAGE_NAME}:server-latest`,供 `docker-compose.yml` 的
 - self-hosted runner 必须同时打 `RUNNER_LABELS` 里的所有标签,否则 deploy job 找不到 runner,会一直 queued
 - 基础镜像(golang / alpine / 依赖服务)必须先 sync 到镜像仓库,否则 build / deploy 会因 `FROM` 拉不到而 fail
 - `deploy.yml` 用的是 GitHub Actions 默认 token `${{ secrets.GITHUB_TOKEN }}`,不需要额外配置 PAT
+- CI 只管业务容器。**MySQL / Redis 的生命周期是独立的** —— 它们挂了要手工
+  `cd ${DEPLOY_DIR} && docker compose restart mysql redis` 恢复

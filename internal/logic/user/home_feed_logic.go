@@ -109,7 +109,7 @@ func NewHomeFeedLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HomeFeed
 //   - kwHash = 关键词哈希(search.CacheKeyHash),空关键词时为 "0"
 //     必须参与 key：否则搜"二手"会命中搜"租房"的首页缓存
 //
-// 前缀由 internal/keys.Key 加 —— 共享底座的 Redis 上还有 chatroom 在跑。
+// 前缀由 internal/keys.Key 加 —— 所有 Redis key 都带应用前缀。
 func homeFeedCacheKey(scope, adcode string, version int64, kwHash string, page, pageSize int) string {
 	if kwHash == "" {
 		kwHash = "0"

@@ -1,0 +1,44 @@
+# ============================================================
+# Redis
+# ============================================================
+# 独立部署的数据存储。业务容器通过 data-net 网络访问它。
+#
+#   起：  cp .env.example .env && 填好密码
+#         docker compose up -d
+#   停：  docker compose stop
+#   看：  docker compose ps
+#
+# data-net 是外部网络 —— 多个项目可以接入同一张网络互相访问，
+# 端口不用暴露到宿主。需要先存在:
+#   docker network create data-net
+
+name: redis
+
+services:
+  redis:
+    image: ${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:redis-7.0
+    container_name: redis
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:6379:6379"    # 只允许本机访问
+    volumes:
+      - redis-data:/data
+    # shell -c 包装，让 ${REDIS_PASSWORD} 在容器启动时展开
+    command: >
+      sh -c 'redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -a $${REDIS_PASSWORD} ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - data-net
+
+networks:
+  data-net:
+    external: true
+    name: data-net
+
+volumes:
+  redis-data:

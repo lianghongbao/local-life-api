@@ -36,7 +36,7 @@ type versionEntry struct {
 //   - scope: 过滤维度,"city" 按城市、"area" 按区
 //   - adcode: 6 位国标 adcode 字符串
 //
-// 走 internal/keys.Key 加应用前缀 —— 共享底座的 Redis 上还有 chatroom 在跑。
+// 走 internal/keys.Key 加应用前缀。
 func FeedVersionKey(scope, adcode string) string {
 	return keys.Key(fmt.Sprintf(feedVerKeyTemplate, scope, adcode))
 }

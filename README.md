@@ -40,7 +40,7 @@
 | Web 框架 | [go-zero](https://github.com/zeromicro/go-zero) | REST 路由 + 配置加载 |
 | 响应包装 | `zeromicro/x` | 统一 `{code, msg, data}` 信封 |
 | 数据库 | MySQL 8.0 | 字符集 `utf8mb4` |
-| 缓存 | Redis 7+ | go-zero 自带 `CacheConn`,可选用于限流 |
+| 缓存 | Redis 7+ | go-zero 的 `CacheConn`,所有带缓存的 model 都走它 |
 | 对象存储 | 阿里云 OSS | 直传 + STS 临时凭证 + V4 签名 |
 | 鉴权 | JWT(HS256) | 主载荷为 `openid`,独立 Admin token |
 | API 规范 | go-zero `.api` 文件 | `api/*.api` 是接口契约的 source of truth |
@@ -82,6 +82,7 @@ local-life-api/
 │   │   ├── user/       # C 端用户域
 │   │   └── admin/      # 管理后台域
 │   ├── model/          # 数据访问层(goctl mysql 生成,含 CacheConn)
+│   ├── keys/           # Redis key 前缀(所有 key 统一走这里)
 │   ├── svc/            # ServiceContext 依赖注入
 │   ├── types/          # 请求/响应 DTO(goctl 生成)
 │   ├── config/         # 配置文件解析 target
@@ -91,7 +92,10 @@ local-life-api/
 │   ├── openapi.json    # Swagger 2.0 完整导出(由 goctl 生成,覆盖全部 47 个路径)
 │   └── sql/            # init.sql(完整当前 schema)+ migrations/(增量脚本占位)
 ├── etc/                # 运行时配置(.yaml)
-├── deploy/             # docker-compose + .env.example + nginx 模板
+├── deploy/             # 应用 compose + .env.example
+│   ├── db/             # MySQL 建库建表脚本(首次创建时执行)
+│   ├── mysql/          # 独立部署的 MySQL
+│   ├── redis/          # 独立部署的 Redis
 ├── Dockerfile          # 容器镜像构建
 ├── entrypoint.sh       # 容器启动脚本
 ├── logs/               # 运行日志(按天滚动)
@@ -115,7 +119,8 @@ go mod download
 cp etc/mini-api-dev.example.yaml etc/mini-api-dev.local.yaml
 # 编辑 .local.yaml,填入 MySQL / Redis / 微信 / OSS 凭证
 
-# 4. 初始化数据库
+# 4. 准备数据库
+#    生产环境用 docker compose 起的 mysql/redis。
 mysql -uroot -p < docs/sql/init.sql
 
 # 5. 编译并启动
@@ -167,25 +172,34 @@ GO_CONFIG_FILE=etc/mini-api-dev.yaml ./local-life-api    # dev
 ### 关键配置项
 
 ```yaml
-Name: local-life-api
+Name: mini-api
+Host: 0.0.0.0
 Port: 8888
 
 # MySQL(用环境变量注入,不要把真实 DSN 写进 committed 文件)
-Mysql:
-  Datasource: "${MYSQL_DSN}"            # 格式: user:pass@tcp(host:3306)/dbname?charset=utf8mb4
-  CacheMaxConn: 100
+DB:
+  DataSource: "${DB_DATASOURCE}"        # 格式: user:pass@tcp(host:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+  Policy: round-robin
 
-# Redis(go-zero limit 用,可选)
-Redis:
-  Host: "${REDIS_HOST:-127.0.0.1:6379}"
+# Redis(go-zero 的 CacheConn,带缓存的 model 走它)
+CacheRedis:
+  - Host: "${REDIS_HOST}"               # 格式: host:port
+    Type: node
+    Pass: "${REDIS_PASSWORD}"
+    Weight: 100
 
-# JWT
-JwtAuth:
-  AccessSecret: "${JWT_SECRET}"         # 生产必须 ≥32 字节随机串
+# JWT(用户端和后台端各一套密钥)
+Auth:
+  AccessSecret: "${AUTH_ACCESS_SECRET}" # 生产必须 ≥32 字节随机串
+  AccessExpire: 7200
+AdminAuth:
+  AccessSecret: "${ADMIN_AUTH_SECRET}"
+  AccessExpire: 7200
+RefreshSecret: "${REFRESH_SECRET}"
 
 # 微信小程序
 WxMini:
-  AppID:     "${WX_APPID}"
+  AppID:     "${WX_APP_ID}"
   AppSecret: "${WX_APP_SECRET}"
 
 # 阿里云 OSS(所有真实值通过环境变量注入)
@@ -193,18 +207,18 @@ OSS:
   Endpoint:        "${OSS_ENDPOINT}"   # 例如: oss-cn-<region>.aliyuncs.com
   Bucket:          "${OSS_BUCKET}"     # 你的 bucket 名
   Region:          "${OSS_REGION}"     # 例如: cn-<region>
-  AccessKeyID:     "${OSS_AK}"
-  AccessKeySecret: "${OSS_SK}"
+  AccessKeyID:     "${OSS_ACCESS_KEY_ID}"
+  AccessKeySecret: "${OSS_ACCESS_KEY_SECRET}"
   RoleArn:         "${OSS_ROLE_ARN}"   # 阿里云 RAM STS 角色 ARN,格式见阿里云文档
-  UploadHost:      ""                  # 直传目标,默认同 bucket
+  UploadHost:      "${OSS_UPLOAD_HOST}" # 直传目标
   URLPrefix:       "${OSS_URL_PREFIX}" # CDN 加速域名,例如 https://cdn.example.com
   Hosts:                              # 图片入库 URL 域名白名单
-    - "${OSS_CDN_DOMAIN}"             # 与 URLPrefix 域名一致
+    - "${OSS_ALLOWED_HOST}"           # 与 URLPrefix 域名一致
 ```
 
 > **所有真实凭证必须通过环境变量 / `.local.yaml` (gitignore) 注入**。`etc/*.example.yaml` 是脱敏模板,committed 进仓库。
 >
-> **生产部署提醒**:`DevMode` / `AccessKey` / `WxMini.AppSecret` 必须替换为正式凭证。
+> Redis 的所有 key 都带 `local-life:` 前缀,统一走 `internal/keys` 包。详见 [internal/model/README.md](internal/model/README.md)。
 
 ---
 
@@ -485,13 +499,21 @@ go test ./... -cover
 
 ## Docker 部署
 
-项目内自带 `Dockerfile` + `deploy/docker-compose.yml`,可一键起 MySQL + Redis + API 三件套。
+数据存储和业务分离部署 —— MySQL / Redis 是**独立部署**的服务，
+各自有自己的 compose；业务容器通过 `data-net` 网络访问它们。
+
+```
+data-net（外部网络）
+  mysql:3306   → local_life 库
+  redis:6379   → local-life: 前缀的 key
+  local-life-api:8888
+```
 
 ### 构建
 
 ```bash
 # 多阶段构建,产物在 bin/
-docker build -t local-life-api:latest .
+docker build -t local-life-api:server-latest .
 
 # 或本地构建 + docker load(更省网络)
 CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/local-life-api .
@@ -500,38 +522,52 @@ CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/local-life-api .
 ### 启动
 
 ```bash
-# 复制 .env 模板并填实参
-cp deploy/.env.example deploy/.env
-vi deploy/.env
+# 1. 建网络 —— 数据存储和业务容器都接进来
+docker network create data-net
 
-# 起服务
-cd deploy && docker compose up -d
+# 2. 起 MySQL
+cd deploy/mysql
+cp .env.example .env && vi .env   # MYSQL_ROOT_PASSWORD
+docker compose up -d
+
+# 3. 起 Redis
+cd ../redis
+cp .env.example .env && vi .env   # REDIS_PASSWORD
+docker compose up -d
+
+# 4. 起业务容器
+cd ..
+cp .env.example .env && vi .env   # 应用凭证;MYSQL/REDIS 密码跟上面一致
+docker compose up -d
 
 # 看日志
-docker compose logs -f api
+docker compose logs -f local-life-api
 ```
 
 ### 健康检查
 
 ```bash
 curl http://127.0.0.1:8888/api/v1/health
-# {"code":0,"msg":"ok","data":{"status":"ok"}}
+# {"code":0,"msg":"ok","data":{"status":"ok","items":[{"name":"db","status":"ok"},{"name":"redis","status":"ok"}]}}
 ```
 
 ### CI/CD
 
-项目根 `.github/workflows/` 包含 GitHub Actions,典型流程:
+`.github/workflows/deploy.yml`,push 到 main 触发:
 
-1. `actions/checkout` + `actions/setup-go@v5`(Node 24 + Go 缓存)
-2. `go build ./...` → `go test ./...`
-3. Docker build → push 到阿里云 ACR 个人版(`<your-acr-repo>`)
-4. SSH 到 ECS → `docker compose pull && docker compose up -d`
+1. **build**(GitHub-hosted runner):`docker buildx build` → push 到阿里云 ACR
+2. **deploy**(ECS self-hosted runner):pull 镜像 → 同步 compose → 起容器 → 健康检查
 
-> 部署细节、CDN 域名绑定、HTTPS 证书、密钥轮换等,部署平台侧维护(本仓库不附带)。
+配置项(Vars / Secrets)、首次部署步骤见 [deploy/README.md](deploy/README.md)
+和 [.github/workflows/README.md](.github/workflows/README.md)。
 
 ---
 
 ## 相关文档
 
+- [部署说明 deploy/README.md](deploy/README.md) — compose + CI 部署
+
+- [CI 配置 .github/workflows/README.md](.github/workflows/README.md) — Vars / Secrets
+- [Redis key 约定 internal/model/README.md](internal/model/README.md) — key 前缀
 - [小程序端 local-life/](../local-life/) — 微信小程序工程
 - [管理后台 local-life-admin/](../local-life-admin/) — Vue3 后台工程

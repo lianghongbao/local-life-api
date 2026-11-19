@@ -157,51 +157,17 @@ jobs:
             fi
           fi
 
-          # 共享底座的网络 —— mysql / redis 在别的 compose project 里,
-          # 本 compose 用 external network 连过去。外部网络不会自动创建,
-          # 幂等地补一次。
-          docker network inspect shared-infra-net >/dev/null 2>&1 || \
-            docker network create shared-infra-net
+          # 同步数据存储的 compose 和建库建表脚本。
+          # MySQL / Redis 是独立部署的,有自己的 compose project。
+          mkdir -p "${DEPLOY_DIR}/mysql" "${DEPLOY_DIR}/redis" "${DEPLOY_DIR}/db"
+          cp $GITHUB_WORKSPACE/deploy/mysql/docker-compose.yml "${DEPLOY_DIR}/mysql/"
+          cp $GITHUB_WORKSPACE/deploy/redis/docker-compose.yml "${DEPLOY_DIR}/redis/"
+          cp $GITHUB_WORKSPACE/deploy/db/. "${DEPLOY_DIR}/db/"
 
-          # ============================================================
-          # 共享底座准备
-          # ============================================================
-          # 新 compose 让应用连 shared-mysql / shared-redis。
-          # 底座不存在的话应用起来连不上 mysql,健康检查必挂 ——
-          # 所以起应用**之前**必须确认底座在跑。
-          #
-          # 底座的数据是持久的(独立 volume),这里只做「确认在跑」,
-          # 不会动数据。
-          INFRA_DIR="${DEPLOY_DIR}/infra"
-
-          if [ ! -f "${INFRA_DIR}/docker-compose.yml" ]; then
-            echo "首次部署:同步共享底座文件..."
-            mkdir -p "${INFRA_DIR}"
-            cp -r $GITHUB_WORKSPACE/deploy/infra/. "${INFRA_DIR}/"
-          fi
-
-          # 底座的 .env:跟应用的 .env 用同一套凭证(应用 .env 里已经有
-          # MYSQL_ROOT_PASSWORD / REDIS_PASSWORD),避免两处填不一致连不上。
-          if [ ! -f "${INFRA_DIR}/.env" ]; then
-            echo "▶ 生成 ${INFRA_DIR}/.env(复用应用凭证)..."
-            set -a; source "${DEPLOY_DIR}/.env"; set +a
-            {
-              echo "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
-              echo "REDIS_PASSWORD=${REDIS_PASSWORD}"
-              echo "ACR_REGISTRY_HOST=${ACR_REGISTRY_HOST:-}"
-              echo "ACR_NAMESPACE=${ACR_NAMESPACE:-}"
-            } > "${INFRA_DIR}/.env"
-            chmod 600 "${INFRA_DIR}/.env"
-          fi
-
-          cd "${INFRA_DIR}"
-          if ! docker ps --format '{{.Names}}' | grep -qx shared-mysql; then
-            echo "▶ 启动共享底座..."
-            ./deploy.sh up
-          else
-            echo "✓ 共享底座已在运行"
-          fi
-          cd "${{ github.workspace }}"
+          # data-net 是外部网络,多个项目的容器接进来互相访问。
+          # 外部网络不会自动创建,幂等地补一次。
+          docker network inspect data-net >/dev/null 2>&1 || \
+            docker network create data-net
 
           # ============================================================
           # 清理不属于当前 project 的同名容器
@@ -221,16 +187,16 @@ jobs:
           fi
           echo "▶ 当前 compose project: ${CURRENT_PROJECT}"
 
-          if docker ps -a --filter "name=^/${APP_CONTAINER}$" --format '{{.Names}}' | grep -qx "${APP_CONTAINER}"; then
-            EXISTING_PROJECT=$(docker inspect "${APP_CONTAINER}" \
-              --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>/dev/null || echo "")
-            if [ "${EXISTING_PROJECT}" != "${CURRENT_PROJECT}" ]; then
-              echo "  删除旧 project(${EXISTING_PROJECT})留下的容器 ${APP_CONTAINER}"
-              docker rm -f "${APP_CONTAINER}"
-            else
-              echo "  ${APP_CONTAINER} 已属于当前 project,保留(compose 会复用它)"
+          for SVC in ${APP_CONTAINER} mysql redis; do
+            if docker ps -a --filter "name=^/${SVC}$" --format '{{.Names}}' | grep -qx "${SVC}"; then
+              EXISTING_PROJECT=$(docker inspect "${SVC}" \
+                --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>/dev/null || echo "")
+              if [ "${EXISTING_PROJECT}" != "${CURRENT_PROJECT}" ]; then
+                echo "  删除旧 project(${EXISTING_PROJECT})留下的容器 ${SVC}"
+                docker rm -f "${SVC}"
+              fi
             fi
-          fi
+          done
 
           # 重启 api 容器
           # 不加 --wait:容器没 HEALTHCHECK 会卡 90s timeout

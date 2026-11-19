@@ -32,7 +32,7 @@ const homeIndexCacheTTLSeconds = 30
 //   - scope = "area"  按 area_adcode 过滤(某区内容)
 //   - adcode 空 → 全市(无范围过滤)
 //
-// 前缀由 internal/keys.Key 加 —— 共享底座的 Redis 上还有 chatroom 在跑。
+// 前缀由 internal/keys.Key 加 —— 所有 Redis key 都带应用前缀。
 func homeIndexCacheKeyFor(scope, adcode string) string {
 	if adcode == "" {
 		return keys.Key("home:index:v1:all")

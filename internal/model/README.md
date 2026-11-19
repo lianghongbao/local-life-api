@@ -21,7 +21,8 @@ cacheUserIdPrefix = "local-life:cache:user:id:"
 内联 `fmt.Sprintf("%s%v", cacheUserIdPrefix, id)` 拼的，**没有拦截点**。
 前缀只能落在 const 的值上。
 
-共享底座的 Redis 上还有 chatroom 在跑（它的前缀是 `chatroom:`），不加前缀就会撞 key。
+所有 Redis key 都带 `local-life:` 前缀 —— 前缀在 `internal/keys` 包里定义，
+是唯一的来源。
 
 **`goctl model` 重新生成后，前缀会被打回原样** —— 要重新把
 `"cache:` 改成 `"local-life:cache:`。本目录下的 8 个 const：

@@ -1,10 +1,12 @@
 # ============================================================
 # local-life-api 部署
 # ============================================================
-# MySQL / Redis 走共享底座（deploy/infra/），本文件只跑业务容器。
+# 业务容器。MySQL / Redis 是独立部署的服务，通过 data-net 网络访问。
 #
-# 共享底座先起：
-#   cd deploy/infra && ./deploy.sh up
+#   起：  cp .env.example .env && 填好凭证
+#         docker compose up -d
+#   停：  docker compose stop
+#   看：  docker compose ps
 #
 # 所有凭证从 deploy/.env 读取(需 .gitignore)
 # 首次使用:cp deploy/.env.example deploy/.env 并填真实值
@@ -12,9 +14,6 @@
 name: local-life
 
 services:
-  # ============================================================
-  # 主服务
-  # ============================================================
   local-life-api:
     # image 由 CI 从镜像仓库 pull 后 re-tag 成 ${IMAGE_NAME}:server-latest
     # 本地 docker compose up 时 fallback 到 ${IMAGE_NAME:-local-life-api},需自带标签
@@ -32,24 +31,24 @@ services:
       - "8888:8888"
     environment:
       - TZ=Asia/Shanghai
-      # 共享底座的 mysql —— 容器名只在 shared-infra-net 网络里可解析
-      - DB_DATASOURCE=root:${MYSQL_ROOT_PASSWORD}@tcp(shared-mysql:3306)/local_life?charset=utf8mb4&parseTime=True&loc=Local
-      # 共享底座的 redis —— 跟 chatroom 共用实例,靠 key 前缀隔离
-      - REDIS_HOST=shared-redis:6379
+      # MySQL —— 容器名在 data-net 网络里可解析
+      - DB_DATASOURCE=root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/local_life?charset=utf8mb4&parseTime=True&loc=Local
+      # Redis
+      - REDIS_HOST=redis:6379
       - TENCENT_MAP_KEY=${TENCENT_MAP_KEY}
     volumes:
       # named volume:容器内 app 用户(uid 1000)有写权限,无需 bind mount
       - api-logs:/data/logs/mini-api
     networks:
-      # 共享底座的网络。external —— 网络由 deploy/infra 创建,不由本 compose 管
-      - shared-infra-net
-    # 没有 depends_on:mysql / redis 是别的 compose project 的 service,
-    # 跨 project 的 depends_on 不生效。共享底座由 deploy/infra 负责保活。
+      - default
+      # 数据存储的网络。external —— 网络由 deploy/mysql 或 deploy/redis 创建,
+      # 业务容器接进来就能用容器名访问 MySQL / Redis。
+      - data-net
 
 networks:
-  shared-infra-net:
+  data-net:
     external: true
-    name: shared-infra-net
+    name: data-net
 
 volumes:
   api-logs:

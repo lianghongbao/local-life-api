@@ -1,8 +1,7 @@
 // Package keys 定义本应用的 Redis key 前缀。
 //
-// 共享底座上 Redis 是多个应用共用的（chatroom 也连同一个实例），
-// 隔离靠 key 前缀 —— 本应用的所有 key 都带 local-life: 前缀，
-// chatroom 的带 chatroom: 前缀，两边不会撞。
+// 本应用的所有 Redis key 都带 local-life: 前缀 —— Redis 实例上可能有
+// 别的 key，按前缀隔开。
 //
 // 全应用只有这一处定义前缀。新增 key 时从这里取，不要在各处散着写字面量。
 //

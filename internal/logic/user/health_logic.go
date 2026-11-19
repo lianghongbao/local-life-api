@@ -125,7 +125,7 @@ func (l *HealthLogic) checkRedis() types.HealthItem {
 		return types.HealthItem{Name: "redis", Status: "fail", Msg: "RedisCli is nil"}
 	}
 	// go-zero Redis client 没有 Ping,Setex 一对 dummy 探活
-	// key 走 keys.Key —— 共享底座上还有 chatroom,不能共用命名空间
+	// key 走 keys.Key —— 所有 Redis key 都带应用前缀
 	if err := l.svcCtx.RedisCli.Setex(keys.Key("health:probe"), "1", 1); err != nil {
 		return types.HealthItem{Name: "redis", Status: "fail", Msg: err.Error()}
 	}

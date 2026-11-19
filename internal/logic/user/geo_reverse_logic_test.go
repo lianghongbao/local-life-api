@@ -33,7 +33,7 @@ func TestGeoReverseCacheKey_跨点隔离(t *testing.T) {
 }
 
 // TestGeoReverseCacheKey_边界取整 验证 math.Round 行为(0.005 进位)
-//   local-life: 前缀不能少 —— 共享底座的 Redis 上还有 chatroom 在跑
+//   local-life: 前缀不能少 —— 所有 key 都要带应用前缀
 func TestGeoReverseCacheKey_边界取整(t *testing.T) {
 	// 30.6550 → 3066(0.5 进位)
 	// 30.6549 → 3065

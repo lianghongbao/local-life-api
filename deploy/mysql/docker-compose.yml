@@ -1,0 +1,52 @@
+# ============================================================
+# MySQL
+# ============================================================
+# 独立部署的数据存储。业务容器通过 data-net 网络访问它。
+#
+#   起：  cp .env.example .env && 填好密码
+#         docker compose up -d
+#   停：  docker compose stop
+#   看：  docker compose ps
+#
+# data-net 是外部网络 —— 多个项目可以接入同一张网络互相访问，
+# 端口不用暴露到宿主。需要先存在:
+#   docker network create data-net
+
+name: mysql
+
+services:
+  mysql:
+    image: ${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:mysql-8.0
+    container_name: mysql
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:3306:3306"    # 只允许本机访问
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 建库建表脚本 —— 只在首次创建数据目录时执行
+      - ../db:/docker-entrypoint-initdb.d:ro
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+      --default-time-zone=+08:00
+      --max-connections=1000
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - data-net
+
+networks:
+  data-net:
+    external: true
+    name: data-net
+
+volumes:
+  mysql-data:

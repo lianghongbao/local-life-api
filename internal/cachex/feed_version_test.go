@@ -6,7 +6,7 @@ import (
 
 // TestFeedVersionKey 验证 version key 拼接格式稳定
 //   - 格式一变会导致旧缓存命中错位 → 全站首页脏数据,关键安全测试
-//   - local-life: 前缀不能少 —— 共享底座的 Redis 上还有 chatroom 在跑
+//   - local-life: 前缀不能少 —— 所有 key 都要带应用前缀
 func TestFeedVersionKey(t *testing.T) {
 	cases := []struct {
 		scope, adcode string
