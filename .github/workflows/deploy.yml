@@ -171,8 +171,7 @@ jobs:
           # 所以起应用**之前**必须确认底座在跑。
           #
           # 底座的数据是持久的(独立 volume),这里只做「确认在跑」,
-          # 不会动数据。第一次建底座 + 从旧版迁数据是**一次性手工操作**,
-          # 见 deploy/README.md 的「从旧版迁移」章节。
+          # 不会动数据。
           INFRA_DIR="${DEPLOY_DIR}/infra"
 
           if [ ! -f "${INFRA_DIR}/docker-compose.yml" ]; then
@@ -195,16 +194,6 @@ jobs:
             chmod 600 "${INFRA_DIR}/.env"
           fi
 
-          # 旧版 compose 自带的 local-life-mysql / local-life-redis
-          # 跟共享底座抢 3306 / 6379,得先停掉。
-          # 只 stop 不删 —— 迁移还没做的话数据还在里面。
-          for OLD in local-life-mysql local-life-redis; do
-            if docker ps --format '{{.Names}}' | grep -qx "${OLD}"; then
-              echo "▶ 停掉旧容器 ${OLD}(数据卷保留)"
-              docker stop "${OLD}" >/dev/null
-            fi
-          done
-
           cd "${INFRA_DIR}"
           if ! docker ps --format '{{.Names}}' | grep -qx shared-mysql; then
             echo "▶ 启动共享底座..."
@@ -215,16 +204,17 @@ jobs:
           cd "${{ github.workspace }}"
 
           # ============================================================
-          # 清理旧 compose 留下的同名容器
+          # 清理不属于当前 project 的同名容器
           # ============================================================
-          # 旧版 compose 没有 name: 字段,project 名取目录名(deploy);
-          # 新版有 name: local-life。同一个 container_name 属于两个 project,
-          # compose 会认为那是"别人的"容器,拒绝接管:
+          # 同一个 container_name 不能同时属于两个 compose project。
+          # 改过 compose 的 name: 字段(或者部署目录改名)之后,旧 project
+          # 留下的容器会让 compose 拒绝接管:
           #   Conflict. The container name "/local-life-api" is already in use
           # 所以先把不属于当前 project 的同名容器删掉。
-          # 从 compose 文件里读 project 名(优先用 name: 字段,
-          # 没有就退回目录名 —— compose 的默认规则)。
-          # 不用 python 解析 JSON:ECS 上不一定装了 python3。
+          #
+          # project 名从 compose 文件里读(优先 name: 字段,没有就退回
+          # 目录名 —— compose 的默认规则)。不用 python 解析 JSON:
+          # ECS 上不一定装了 python3。
           CURRENT_PROJECT=$(cd ${DEPLOY_DIR} && docker compose config 2>/dev/null | grep -E "^name:" | head -1 | awk '{print $2}')
           if [ -z "${CURRENT_PROJECT}" ]; then
             CURRENT_PROJECT=$(basename "${DEPLOY_DIR}")

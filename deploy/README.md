@@ -18,59 +18,35 @@ MySQL / Redis 走**共享底座**（`deploy/infra/`），本目录的 compose �
 ## 首次部署
 
 ```bash
+# 1. 先起共享底座
 cd deploy/infra
 cp .env.example .env && vi .env   # MYSQL_ROOT_PASSWORD / REDIS_PASSWORD
 ./deploy.sh up                     # 建网络 + 起 shared-mysql / shared-redis
 cd ..
+
+# 2. 再起应用
 cp .env.example .env && vi .env    # 应用凭证 + 共享底座密码（同一个值）
 docker compose up -d
 ```
 
-## 从旧版迁移（旧 compose 自带 mysql/redis）
+## 共享底座怎么用
 
-旧版 compose 自带 `local-life-mysql` / `local-life-redis`，容器名和端口跟
-共享底座**完全一样**（`127.0.0.1:3306` / `6379`），所以两个不能同时跑。
-
-**在 ECS 上跑这一个命令就行**（在仓库根目录）：
+底座的 compose 在 `deploy/infra/`，是**独立的 compose project**（`shared-infra`），
+生命周期跟业务应用分开：
 
 ```bash
-./deploy/setup-shared-base.sh
+cd deploy/infra
+./deploy.sh up        # 起底座（建网络 + 起 shared-mysql / shared-redis）
+./deploy.sh status    # 看状态
+./deploy.sh down      # 停掉（数据卷保留）
+./deploy.sh init-db   # 补执行 init/ 下的建库建表脚本
 ```
 
-它做四件事：
+底座**不随业务代码发布重启** —— CI 只管 `local-life-api` 容器。
+底座挂了要手工 `cd deploy/infra && ./deploy.sh up` 恢复。
 
-1. `git pull` 拉最新代码（拿到 `deploy/infra/` 和迁移脚本）
-2. 停掉旧的 mysql / redis（**只 stop，不删** —— 数据还要用）
-3. 起共享底座（`shared-mysql` / `shared-redis`，建库建表）
-4. 把旧 MySQL 的 `local_life` 数据搬过去，逐表校验行数
-
-脚本会打印每张表的新旧行数对比。**全部 ✓ 之后再往下走**；有任何 ⚠️/❌
-就停下来查（旧数据还在容器和卷里，可以重跑或手工修）。
-
-> Redis 不迁移 —— 缓存丢了会自己重建，限流桶这类短期状态重置也无所谓。
->
-> 迁移是**幂等**的：导入前会清空目标表，重复跑结果一致。
-
-底层脚本是 `deploy/migrate-to-shared-base.sh`，`setup-shared-base.sh` 只是
-加了 git pull 和收尾提示。单独跑也行：
-
-```bash
-cd deploy && ./migrate-to-shared-base.sh
-```
-
-### 迁移完之后
-
-```bash
-# 1. push 触发 CI 部署新 compose
-git add -A && git commit -m 'feat: 接入共享 MySQL/Redis 底座' && git push
-
-# 2. CI 绿了之后，清理旧容器（确认数据没问题再删）
-docker compose down --remove-orphans
-```
-
-> `docker compose down --remove-orphans` 会删掉 `local-life-mysql` /
-> `local-life-redis` **及其数据卷**。删了旧数据就找不回来了 ——
-> 确认共享底座里的数据没问题再做这一步。
+> 底座的 `.env` 里的 `MYSQL_ROOT_PASSWORD` / `REDIS_PASSWORD` 必须跟
+> `deploy/.env` 填**同一个值** —— 应用就是拿这对凭证连底座的。
 
 ## CI 部署
 
@@ -81,9 +57,6 @@ docker compose down --remove-orphans
 
 CI **不会**覆盖 ECS 上的 `.env`（只在缺失时从 `.env.example` 生成并直接退出）。
 所以 ECS 上的 `.env` 必须提前填好真实凭证。
-
-CI 只管业务容器。**共享底座的生命周期是独立的** —— 底座挂了/重建了，
-业务应用不会跟着重启，得手工 `cd deploy/infra && ./deploy.sh up`。
 
 配置项（Vars / Secrets）见 `.github/workflows/README.md`。
 

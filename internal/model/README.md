@@ -41,10 +41,21 @@ internal/model/user_model_gen.go:27,28      cacheUserIdPrefix / cacheUserOpenidP
 
 `internal/model` 之外还有几处 key，都不在本目录：
 
-- `internal/cachex/feed_version.go` —— 首页 feed version
-- `internal/logic/user/home_feed_logic.go`、`home_index_logic.go` —— 首页缓存
-- `internal/logic/user/geo_*_logic.go` —— 腾讯地图缓存
-- `internal/background/view_count_flusher.go` —— 浏览数累加
-- `internal/logic/user/comment_create_logic.go` —— 评论后删缓存
+| 位置 | key |
+|---|---|
+| `internal/cachex/feed_version.go` | 首页 feed version |
+| `internal/logic/user/home_feed_logic.go` | 首页 feed 列表 |
+| `internal/logic/user/home_index_logic.go` | 首页索引 |
+| `internal/logic/user/notice_list_logic.go` | 公告列表 |
+| `internal/logic/user/post_list_logic.go` | 帖子列表 |
+| `internal/logic/user/shop_list_logic.go` | 商家列表 |
+| `internal/logic/user/my_posts_logic.go` | 我的发布 |
+| `internal/logic/user/my_shops_logic.go` | 我的商家 |
+| `internal/logic/user/comment_create_logic.go` | 评论后删缓存 |
+| `internal/logic/user/health_logic.go` | 健康探针 |
+
+这几处走 `keys.Key(...)` 包装。`internal/logic/user/geo_*_logic.go`（腾讯地图缓存）
+和 `internal/background/view_count_flusher.go`（浏览数累加）例外 —— 它们的 key
+模板是 const，前缀直接写在字面量里。
 
 新增 key 时统一走 `internal/keys` 包，别在各处散着写字面量。
