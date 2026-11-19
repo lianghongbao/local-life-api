@@ -162,7 +162,8 @@ jobs:
           mkdir -p "${DEPLOY_DIR}/mysql" "${DEPLOY_DIR}/redis" "${DEPLOY_DIR}/db"
           cp $GITHUB_WORKSPACE/deploy/mysql/docker-compose.yml "${DEPLOY_DIR}/mysql/"
           cp $GITHUB_WORKSPACE/deploy/redis/docker-compose.yml "${DEPLOY_DIR}/redis/"
-          cp $GITHUB_WORKSPACE/deploy/db/. "${DEPLOY_DIR}/db/"
+          # -r 必须加:源是目录(cp 不加 -r 会报 "omitting directory")
+          cp -r $GITHUB_WORKSPACE/deploy/db/. "${DEPLOY_DIR}/db/"
 
           # data-net 是外部网络,多个项目的容器接进来互相访问。
           # 外部网络不会自动创建,幂等地补一次。
@@ -187,16 +188,17 @@ jobs:
           fi
           echo "▶ 当前 compose project: ${CURRENT_PROJECT}"
 
-          for SVC in ${APP_CONTAINER} mysql redis; do
-            if docker ps -a --filter "name=^/${SVC}$" --format '{{.Names}}' | grep -qx "${SVC}"; then
-              EXISTING_PROJECT=$(docker inspect "${SVC}" \
-                --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>/dev/null || echo "")
-              if [ "${EXISTING_PROJECT}" != "${CURRENT_PROJECT}" ]; then
-                echo "  删除旧 project(${EXISTING_PROJECT})留下的容器 ${SVC}"
-                docker rm -f "${SVC}"
-              fi
+          # 只清业务容器。mysql / redis 属于各自的 compose project
+          # (mysql / redis),不是这个 project 的 —— 拿 CURRENT_PROJECT
+          # 去比对会把它们误删。
+          if docker ps -a --filter "name=^/${APP_CONTAINER}$" --format '{{.Names}}' | grep -qx "${APP_CONTAINER}"; then
+            EXISTING_PROJECT=$(docker inspect "${APP_CONTAINER}" \
+              --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>/dev/null || echo "")
+            if [ "${EXISTING_PROJECT}" != "${CURRENT_PROJECT}" ]; then
+              echo "  删除旧 project(${EXISTING_PROJECT})留下的容器 ${APP_CONTAINER}"
+              docker rm -f "${APP_CONTAINER}"
             fi
-          done
+          fi
 
           # 重启 api 容器
           # 不加 --wait:容器没 HEALTHCHECK 会卡 90s timeout
