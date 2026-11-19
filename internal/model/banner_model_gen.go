@@ -24,7 +24,7 @@ var (
 	bannerRowsExpectAutoSet   = strings.Join(stringx.Remove(bannerFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	bannerRowsWithPlaceHolder = strings.Join(stringx.Remove(bannerFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 
-	cacheBannerIdPrefix = "cache:banner:id:"
+	cacheBannerIdPrefix = "local-life:cache:banner:id:"
 )
 
 type (

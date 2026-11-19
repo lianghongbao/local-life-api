@@ -24,7 +24,7 @@ var (
 	shopRowsExpectAutoSet   = strings.Join(stringx.Remove(shopFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	shopRowsWithPlaceHolder = strings.Join(stringx.Remove(shopFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 
-	cacheShopIdPrefix = "cache:shop:id:"
+	cacheShopIdPrefix = "local-life:cache:shop:id:"
 )
 
 type (

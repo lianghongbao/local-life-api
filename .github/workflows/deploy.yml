@@ -157,22 +157,66 @@ jobs:
             fi
           fi
 
-          # 保活依赖容器(mysql + redis 挂了自动起,避免主服务连不上 redis)
-          cd ${DEPLOY_DIR}
-          docker compose up -d mysql redis
-          # 等依赖健康
-          echo "⏳ 等待 mysql + redis 健康..."
-          for i in $(seq 1 30); do
-            if docker exec local-life-mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" >/dev/null 2>&1 && \
-               docker exec local-life-redis redis-cli -a "${REDIS_PASSWORD}" ping >/dev/null 2>&1; then
-              echo "✅ mysql + redis 健康"
-              break
+          # 共享底座的网络 —— mysql / redis 在别的 compose project 里,
+          # 本 compose 用 external network 连过去。外部网络不会自动创建,
+          # 幂等地补一次。
+          docker network inspect shared-infra-net >/dev/null 2>&1 || \
+            docker network create shared-infra-net
+
+          # ============================================================
+          # 共享底座准备
+          # ============================================================
+          # 新 compose 让应用连 shared-mysql / shared-redis。
+          # 底座不存在的话应用起来连不上 mysql,健康检查必挂 ——
+          # 所以起应用**之前**必须确认底座在跑。
+          #
+          # 底座的数据是持久的(独立 volume),这里只做「确认在跑」,
+          # 不会动数据。第一次建底座 + 从旧版迁数据是**一次性手工操作**,
+          # 见 deploy/README.md 的「从旧版迁移」章节。
+          INFRA_DIR="${DEPLOY_DIR}/infra"
+
+          if [ ! -f "${INFRA_DIR}/docker-compose.yml" ]; then
+            echo "首次部署:同步共享底座文件..."
+            mkdir -p "${INFRA_DIR}"
+            cp -r $GITHUB_WORKSPACE/deploy/infra/. "${INFRA_DIR}/"
+          fi
+
+          # 底座的 .env:跟应用的 .env 用同一套凭证(应用 .env 里已经有
+          # MYSQL_ROOT_PASSWORD / REDIS_PASSWORD),避免两处填不一致连不上。
+          if [ ! -f "${INFRA_DIR}/.env" ]; then
+            echo "▶ 生成 ${INFRA_DIR}/.env(复用应用凭证)..."
+            set -a; source "${DEPLOY_DIR}/.env"; set +a
+            {
+              echo "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+              echo "REDIS_PASSWORD=${REDIS_PASSWORD}"
+              echo "ACR_REGISTRY_HOST=${ACR_REGISTRY_HOST:-}"
+              echo "ACR_NAMESPACE=${ACR_NAMESPACE:-}"
+            } > "${INFRA_DIR}/.env"
+            chmod 600 "${INFRA_DIR}/.env"
+          fi
+
+          # 旧版 compose 自带的 local-life-mysql / local-life-redis
+          # 跟共享底座抢 3306 / 6379,得先停掉。
+          # 只 stop 不删 —— 迁移还没做的话数据还在里面。
+          for OLD in local-life-mysql local-life-redis; do
+            if docker ps --format '{{.Names}}' | grep -qx "${OLD}"; then
+              echo "▶ 停掉旧容器 ${OLD}(数据卷保留)"
+              docker stop "${OLD}" >/dev/null
             fi
-            sleep 2
           done
+
+          cd "${INFRA_DIR}"
+          if ! docker ps --format '{{.Names}}' | grep -qx shared-mysql; then
+            echo "▶ 启动共享底座..."
+            ./deploy.sh up
+          else
+            echo "✓ 共享底座已在运行"
+          fi
+          cd "${{ github.workspace }}"
 
           # 重启 api 容器
           # 不加 --wait:容器没 HEALTHCHECK 会卡 90s timeout
+          cd ${DEPLOY_DIR}
           docker compose up -d --no-deps ${APP_CONTAINER}
           docker ps -a
 

@@ -10,6 +10,7 @@ import (
 
 	"local-life-api/common/jwtx"
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
@@ -54,7 +55,7 @@ type myShopRow struct {
 const myShopsCacheTTL = 10 * time.Second
 
 func myShopsCacheKey(userId int64, page, pageSize int) string {
-	return fmt.Sprintf("my:shops:%d:p%d:s%d", userId, page, pageSize)
+	return keys.Key(fmt.Sprintf("my:shops:%d:p%d:s%d", userId, page, pageSize))
 }
 
 // MyShops 查询当前用户入驻的商家列表（所有状态，按时间倒序）

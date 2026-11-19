@@ -8,6 +8,7 @@ import (
 
 	"local-life-api/internal/background"
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/search"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
@@ -74,7 +75,7 @@ func postListCacheKey(postType int, adcode string, kwHash string, page, pageSize
 	if kwHash == "" {
 		kwHash = "0"
 	}
-	return fmt.Sprintf("posts:type%d:area%s:kw%s:p%d:s%d", postType, adcode, kwHash, page, pageSize)
+	return keys.Key(fmt.Sprintf("posts:type%d:area%s:kw%s:p%d:s%d", postType, adcode, kwHash, page, pageSize))
 }
 
 // PostList C 端公开信息列表

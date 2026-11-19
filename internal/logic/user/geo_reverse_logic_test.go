@@ -33,6 +33,7 @@ func TestGeoReverseCacheKey_跨点隔离(t *testing.T) {
 }
 
 // TestGeoReverseCacheKey_边界取整 验证 math.Round 行为(0.005 进位)
+//   local-life: 前缀不能少 —— 共享底座的 Redis 上还有 chatroom 在跑
 func TestGeoReverseCacheKey_边界取整(t *testing.T) {
 	// 30.6550 → 3066(0.5 进位)
 	// 30.6549 → 3065
@@ -40,9 +41,9 @@ func TestGeoReverseCacheKey_边界取整(t *testing.T) {
 	kLow := geoReverseCacheKey(30.6549, 104.0648)
 	kMid := geoReverseCacheKey(30.6550, 104.0648)
 	kHigh := geoReverseCacheKey(30.6650, 104.0648)
-	assert.Equal(t, "geo:reverse:v1:3065:10406", kLow)
-	assert.Equal(t, "geo:reverse:v1:3066:10406", kMid)
-	assert.Equal(t, "geo:reverse:v1:3067:10406", kHigh)
+	assert.Equal(t, "local-life:geo:reverse:v1:3065:10406", kLow)
+	assert.Equal(t, "local-life:geo:reverse:v1:3066:10406", kMid)
+	assert.Equal(t, "local-life:geo:reverse:v1:3067:10406", kHigh)
 }
 
 // TestTencentFailKey_独立命名空间 验证 fail 标记 key 与正常 cache key 区分

@@ -37,6 +37,8 @@ Thumbs.db
 *.local.yaml
 # Docker Compose 凭证文件(复制 deploy/.env.example → deploy/.env 后填真值)
 deploy/.env
+# 共享底座(MySQL + Redis)的凭证文件
+deploy/infra/.env
 # 旧版含真实凭证的 yaml（迁移完成后可删）
 # mini-api.yaml 和 mini-api-dev.yaml 已切换到 ${ENV} 占位符,
 # 但 git 历史里仍有旧版,需用 `git filter-repo` 清理 (见 docs/SECRETS_ROTATION.md)

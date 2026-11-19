@@ -6,14 +6,15 @@ import (
 
 // TestFeedVersionKey 验证 version key 拼接格式稳定
 //   - 格式一变会导致旧缓存命中错位 → 全站首页脏数据,关键安全测试
+//   - local-life: 前缀不能少 —— 共享底座的 Redis 上还有 chatroom 在跑
 func TestFeedVersionKey(t *testing.T) {
 	cases := []struct {
 		scope, adcode string
 		want          string
 	}{
-		{"city", "510100", "feed:ver:city:510100"},
-		{"area", "510105", "feed:ver:area:510105"},
-		{"city", "", "feed:ver:city:"},
+		{"city", "510100", "local-life:feed:ver:city:510100"},
+		{"area", "510105", "local-life:feed:ver:area:510105"},
+		{"city", "", "local-life:feed:ver:city:"},
 	}
 	for _, c := range cases {
 		got := FeedVersionKey(c.scope, c.adcode)

@@ -24,8 +24,8 @@ var (
 	userRowsExpectAutoSet   = strings.Join(stringx.Remove(userFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	userRowsWithPlaceHolder = strings.Join(stringx.Remove(userFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 
-	cacheUserIdPrefix     = "cache:user:id:"
-	cacheUserOpenidPrefix = "cache:user:openid:"
+	cacheUserIdPrefix     = "local-life:cache:user:id:"
+	cacheUserOpenidPrefix = "local-life:cache:user:openid:"
 )
 
 type (

@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"time"
 
+	"local-life-api/internal/keys"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -124,7 +125,8 @@ func (l *HealthLogic) checkRedis() types.HealthItem {
 		return types.HealthItem{Name: "redis", Status: "fail", Msg: "RedisCli is nil"}
 	}
 	// go-zero Redis client 没有 Ping,Setex 一对 dummy 探活
-	if err := l.svcCtx.RedisCli.Setex("health:probe", "1", 1); err != nil {
+	// key 走 keys.Key —— 共享底座上还有 chatroom,不能共用命名空间
+	if err := l.svcCtx.RedisCli.Setex(keys.Key("health:probe"), "1", 1); err != nil {
 		return types.HealthItem{Name: "redis", Status: "fail", Msg: err.Error()}
 	}
 	return types.HealthItem{Name: "redis", Status: "ok"}

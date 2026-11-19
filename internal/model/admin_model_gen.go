@@ -24,8 +24,8 @@ var (
 	adminRowsExpectAutoSet   = strings.Join(stringx.Remove(adminFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	adminRowsWithPlaceHolder = strings.Join(stringx.Remove(adminFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 
-	cacheAdminIdPrefix       = "cache:admin:id:"
-	cacheAdminUsernamePrefix = "cache:admin:username:"
+	cacheAdminIdPrefix       = "local-life:cache:admin:id:"
+	cacheAdminUsernamePrefix = "local-life:cache:admin:username:"
 )
 
 type (

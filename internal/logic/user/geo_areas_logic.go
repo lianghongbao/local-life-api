@@ -30,11 +30,11 @@ import (
 
 const (
 	geoAreasCacheTTL = 1 * 3600 // 1h:临时缩短,等业务稳定后再改回 7d
-	geoAreasKeyFmt   = "geo:areas:v1:%s" // city_adcode | "search:<kw>"
+	geoAreasKeyFmt   = "local-life:geo:areas:v1:%s" // city_adcode | "search:<kw>"
 
 	areasTencentDistrictURL = "https://apis.map.qq.com/ws/district/v1/"
 	areasTencentFailTTL     = 5 * 60
-	areasTencentFailKey     = "geo:areas:v1:fail"
+	areasTencentFailKey     = "local-life:geo:areas:v1:fail"
 	areasTencentTimeout     = 3 * time.Second
 )
 

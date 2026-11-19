@@ -23,13 +23,13 @@ const (
 	geoReverseCacheTTL = 30 * 24 * 3600
 
 	// geoReverseCacheKeyFmt 坐标按 0.01°(≈1km)取整的 cache key 模板
-	geoReverseCacheKeyFmt = "geo:reverse:v1:%d:%d"
+	geoReverseCacheKeyFmt = "local-life:geo:reverse:v1:%d:%d"
 
 	// tencentReverseURL 腾讯位置服务 reverse geocoding 接口
 	tencentReverseURL = "https://apis.map.qq.com/ws/geocoder/v1/"
 
 	// tencentFailKeyFmt 腾讯调用失败标记的 cache key(防雪崩)
-	tencentFailKeyFmt = "geo:reverse:v1:fail:%d:%d"
+	tencentFailKeyFmt = "local-life:geo:reverse:v1:fail:%d:%d"
 
 	// tencentFailTTL 失败标记 TTL(5 分钟),后续请求直接走降级
 	tencentFailTTL = 5 * 60

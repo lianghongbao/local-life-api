@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/search"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
@@ -43,7 +44,7 @@ func shopListCacheKey(category int, adcode string, kwHash string, page, pageSize
 	if kwHash == "" {
 		kwHash = "0"
 	}
-	return fmt.Sprintf("shops:cat%d:area%s:kw%s:p%d:s%d", category, adcode, kwHash, page, pageSize)
+	return keys.Key(fmt.Sprintf("shops:cat%d:area%s:kw%s:p%d:s%d", category, adcode, kwHash, page, pageSize))
 }
 
 // ShopList C 端公开商家列表

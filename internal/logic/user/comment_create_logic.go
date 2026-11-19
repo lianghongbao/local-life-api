@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -198,7 +199,8 @@ func (l *CommentCreateLogic) CommentCreate(req *types.CommentCreateRequest) (res
 
 	// 7.5) 清掉 post_info 缓存, 否则 PostDetail 拉到的 comment_count 仍是缓存里的 0
 	//      → fold-bar 误显示 "还没有人评论"。走 raw SQL 改的列, model.UPDATE 路径才会自动清缓存。
-	if _, err := l.svcCtx.RedisCli.DelCtx(l.ctx, fmt.Sprintf("cache:postInfo:id:%d", req.PostId)); err != nil {
+	//      key 走 internal/keys 加应用前缀 —— 共享底座的 Redis 上还有 chatroom 在跑。
+	if _, err := l.svcCtx.RedisCli.DelCtx(l.ctx, keys.Key(fmt.Sprintf("cache:postInfo:id:%d", req.PostId))); err != nil {
 		l.Errorf("del post_info cache failed: post_id=%d, err=%v", req.PostId, err)
 	}
 

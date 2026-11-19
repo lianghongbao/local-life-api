@@ -24,7 +24,7 @@ var (
 	noticeRowsExpectAutoSet   = strings.Join(stringx.Remove(noticeFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	noticeRowsWithPlaceHolder = strings.Join(stringx.Remove(noticeFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 
-	cacheNoticeIdPrefix = "cache:notice:id:"
+	cacheNoticeIdPrefix = "local-life:cache:notice:id:"
 )
 
 type (

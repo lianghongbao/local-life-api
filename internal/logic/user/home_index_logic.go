@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"local-life-api/internal/background"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -30,11 +31,13 @@ const homeIndexCacheTTLSeconds = 30
 //   - scope = "city"  按 city_adcode 过滤(同城内容)
 //   - scope = "area"  按 area_adcode 过滤(某区内容)
 //   - adcode 空 → 全市(无范围过滤)
+//
+// 前缀由 internal/keys.Key 加 —— 共享底座的 Redis 上还有 chatroom 在跑。
 func homeIndexCacheKeyFor(scope, adcode string) string {
 	if adcode == "" {
-		return "home:index:v1:all"
+		return keys.Key("home:index:v1:all")
 	}
-	return "home:index:v1:" + scope + ":" + adcode
+	return keys.Key("home:index:v1:" + scope + ":" + adcode)
 }
 
 // noticeRow 公告精简字段

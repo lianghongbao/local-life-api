@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
 
@@ -34,9 +35,9 @@ const (
 	noticeListEmptyCacheTTLSecs = 5
 )
 
-// noticeListCacheKey 缓存 key：notices:p{page}:s{size}
+// noticeListCacheKey 缓存 key：local-life:notices:p{page}:s{size}
 func noticeListCacheKey(page, pageSize int) string {
-	return fmt.Sprintf("notices:p%d:s%d", page, pageSize)
+	return keys.Key(fmt.Sprintf("notices:p%d:s%d", page, pageSize))
 }
 
 // NoticeList C 端公告列表

@@ -11,11 +11,15 @@ import (
 	"sync"
 	"time"
 
+	"local-life-api/internal/keys"
+
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 // feed:ver:{scope}:{adcode}  scope ∈ {"city", "area"}
+//
+// 不带应用前缀 —— 前缀由 internal/keys.Key 统一加。
 const feedVerKeyTemplate = "feed:ver:%s:%s"
 
 // 进程内 version 缓存 TTL,避免每次首页 query 多一次 Redis GET
@@ -31,8 +35,10 @@ type versionEntry struct {
 // FeedVersionKey 拼接 (scope, adcode) 桶的 version Redis key
 //   - scope: 过滤维度,"city" 按城市、"area" 按区
 //   - adcode: 6 位国标 adcode 字符串
+//
+// 走 internal/keys.Key 加应用前缀 —— 共享底座的 Redis 上还有 chatroom 在跑。
 func FeedVersionKey(scope, adcode string) string {
-	return fmt.Sprintf(feedVerKeyTemplate, scope, adcode)
+	return keys.Key(fmt.Sprintf(feedVerKeyTemplate, scope, adcode))
 }
 
 // InvalidateFeedVersion INCR version counter 让首页缓存失效

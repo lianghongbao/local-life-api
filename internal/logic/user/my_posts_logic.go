@@ -10,6 +10,7 @@ import (
 
 	"local-life-api/common/jwtx"
 	"local-life-api/internal/errorx"
+	"local-life-api/internal/keys"
 	"local-life-api/internal/model"
 	"local-life-api/internal/svc"
 	"local-life-api/internal/types"
@@ -59,9 +60,9 @@ type postRow struct {
 //   - 10s 内同一用户重复翻页直接命中 Redis
 const myPostsCacheTTL = 10 * time.Second
 
-// myPostsCacheKey 缓存 key 模板：my:posts:{userId}:p{page}:s{size}
+// myPostsCacheKey 缓存 key 模板：local-life:my:posts:{userId}:p{page}:s{size}
 func myPostsCacheKey(userId int64, page, pageSize int) string {
-	return fmt.Sprintf("my:posts:%d:p%d:s%d", userId, page, pageSize)
+	return keys.Key(fmt.Sprintf("my:posts:%d:p%d:s%d", userId, page, pageSize))
 }
 
 // MyPosts 查询当前用户发布的列表（含所有状态，按时间倒序）

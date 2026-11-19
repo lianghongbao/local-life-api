@@ -18,7 +18,7 @@ import (
 
 const (
 	geoStreetsCacheTTL = 24 * 3600
-	geoStreetsKeyFmt   = "geo:streets:v1:%s"
+	geoStreetsKeyFmt   = "local-life:geo:streets:v1:%s"
 )
 
 type GeoStreetsLogic struct {

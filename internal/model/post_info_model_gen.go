@@ -24,7 +24,7 @@ var (
 	postInfoRowsExpectAutoSet   = strings.Join(stringx.Remove(postInfoFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
 	postInfoRowsWithPlaceHolder = strings.Join(stringx.Remove(postInfoFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 
-	cachePostInfoIdPrefix = "cache:postInfo:id:"
+	cachePostInfoIdPrefix = "local-life:cache:postInfo:id:"
 )
 
 type (

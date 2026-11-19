@@ -29,12 +29,12 @@ import (
 const (
 	geoCitiesCacheTTL = 1 * 3600 // 1h:临时缩短,等业务稳定后再改回 7d
 
-	geoCitiesProvincesKey = "geo:cities:v1:provinces"
-	geoCitiesSearchKeyFmt = "geo:cities:v1:search:%s"
+	geoCitiesProvincesKey = "local-life:geo:cities:v1:provinces"
+	geoCitiesSearchKeyFmt = "local-life:geo:cities:v1:search:%s"
 
 	citiesTencentDistrictURL = "https://apis.map.qq.com/ws/district/v1/"
 	citiesTencentFailTTL     = 5 * 60
-	citiesTencentFailKey     = "geo:cities:v1:fail"
+	citiesTencentFailKey     = "local-life:geo:cities:v1:fail"
 	citiesTencentTimeout     = 3 * time.Second
 )
 

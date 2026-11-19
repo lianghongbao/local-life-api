@@ -109,19 +109,20 @@ type FlushTableConfig struct {
 // key 格式约定:HASH 数据结构的 hash key(如 "{post:view}"),id 作为 hash field 拼接。
 //
 // Cluster hashtag 约束(已合规):
-//   - 所有 key 形如 "{namespace}:view" 或 "{namespace}:view:dirty"
+//   - 所有 key 形如 "local-life:{namespace}:view" 或 "local-life:{namespace}:view:dirty"
 //   - hashtag = 大括号内的 "namespace:view"(如 "post:view" / "shop:view")
 //   - 同 namespace 的 dirty 和 hash key 落同一 slot, lua / pipeline 跨 key 可用
 //   - 不同 namespace 走不同 hashtag, 自动分散到不同 slot / 节点
+//   - local-life: 前缀在 hashtag 之外 —— 加前缀不影响 slot 分布
 const (
 	// PostViewKeyPrefix post view_count 累加 hash key。
-	PostViewKeyPrefix = "{post:view}"
+	PostViewKeyPrefix = "local-life:{post:view}"
 	// PostViewDirtyKey post view_count 待 flush 集合 key。
-	PostViewDirtyKey = "{post:view}:dirty"
+	PostViewDirtyKey = "local-life:{post:view}:dirty"
 	// ShopViewKeyPrefix shop view_count 累加 hash key。
-	ShopViewKeyPrefix = "{shop:view}"
+	ShopViewKeyPrefix = "local-life:{shop:view}"
 	// ShopViewDirtyKey shop view_count 待 flush 集合 key。
-	ShopViewDirtyKey = "{shop:view}:dirty"
+	ShopViewDirtyKey = "local-life:{shop:view}:dirty"
 )
 
 var (
@@ -129,14 +130,14 @@ var (
 		Name:           "post_info",
 		DirtyKey:       PostViewDirtyKey,
 		HashKey:        PostViewKeyPrefix,
-		CacheKeyPrefix: "cache:postInfo:id:",
+		CacheKeyPrefix: "local-life:cache:postInfo:id:",
 	}
 
 	shopFlushConfig = FlushTableConfig{
 		Name:           "shop",
 		DirtyKey:       ShopViewDirtyKey,
 		HashKey:        ShopViewKeyPrefix,
-		CacheKeyPrefix: "cache:shop:id:",
+		CacheKeyPrefix: "local-life:cache:shop:id:",
 	}
 )
 
