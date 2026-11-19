@@ -8,8 +8,9 @@
 // 注意 go-zero 的 cache.Option 不支持 key 前缀（只有 WithExpiry /
 // WithNotFoundExpiry），cacheNode 把 key 原样透传给 Redis；
 // goctl 生成的 model 里 key 是内联 fmt.Sprintf 拼的，也没有拦截点。
-// 所以前缀只能落在 key 的构造处 —— 生成文件里的 const 值是手改的，
-// `goctl model` 重新生成后要重新打补丁（见 internal/model/README.md）。
+// 所以前缀只能落在 key 的构造处 —— 生成文件里的 const 值直接写成
+// 带前缀的完整 key，`goctl model` 重新生成后要重新补上前缀
+// （见 internal/model/README.md）。
 package keys
 
 import "strings"
