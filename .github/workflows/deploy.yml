@@ -214,6 +214,34 @@ jobs:
           fi
           cd "${{ github.workspace }}"
 
+          # ============================================================
+          # 清理旧 compose 留下的同名容器
+          # ============================================================
+          # 旧版 compose 没有 name: 字段,project 名取目录名(deploy);
+          # 新版有 name: local-life。同一个 container_name 属于两个 project,
+          # compose 会认为那是"别人的"容器,拒绝接管:
+          #   Conflict. The container name "/local-life-api" is already in use
+          # 所以先把不属于当前 project 的同名容器删掉。
+          # 从 compose 文件里读 project 名(优先用 name: 字段,
+          # 没有就退回目录名 —— compose 的默认规则)。
+          # 不用 python 解析 JSON:ECS 上不一定装了 python3。
+          CURRENT_PROJECT=$(cd ${DEPLOY_DIR} && docker compose config 2>/dev/null | grep -E "^name:" | head -1 | awk '{print $2}')
+          if [ -z "${CURRENT_PROJECT}" ]; then
+            CURRENT_PROJECT=$(basename "${DEPLOY_DIR}")
+          fi
+          echo "▶ 当前 compose project: ${CURRENT_PROJECT}"
+
+          if docker ps -a --filter "name=^/${APP_CONTAINER}$" --format '{{.Names}}' | grep -qx "${APP_CONTAINER}"; then
+            EXISTING_PROJECT=$(docker inspect "${APP_CONTAINER}" \
+              --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>/dev/null || echo "")
+            if [ "${EXISTING_PROJECT}" != "${CURRENT_PROJECT}" ]; then
+              echo "  删除旧 project(${EXISTING_PROJECT})留下的容器 ${APP_CONTAINER}"
+              docker rm -f "${APP_CONTAINER}"
+            else
+              echo "  ${APP_CONTAINER} 已属于当前 project,保留(compose 会复用它)"
+            fi
+          fi
+
           # 重启 api 容器
           # 不加 --wait:容器没 HEALTHCHECK 会卡 90s timeout
           cd ${DEPLOY_DIR}
