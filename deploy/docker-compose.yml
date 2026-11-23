@@ -15,9 +15,9 @@ name: local-life
 
 services:
   local-life-api:
-    # 业务镜像名。前缀由 ACR_REGISTRY_HOST/ACR_NAMESPACE 拼出，两项都设了才加前缀
-    # （本地构建没配 ACR 时用裸名）。
-    image: ${ACR_NAMESPACE:+${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}/}${IMAGE_NAME:-local-life-api}:server-latest
+    # 业务镜像名。仓库是 ACR_REGISTRY_HOST/ACR_NAMESPACE，镜像名和 tag 跟在冒号后。
+    # 没配 ACR 时用裸名（本地构建）。
+    image: ${ACR_NAMESPACE:+${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:}${IMAGE_NAME:-local-life-api}-latest
     build:
       # 构建上下文是仓库根（local-life-api/），跟 CI 的 `docker buildx build -f Dockerfile .` 一致。
       # Dockerfile 里的 COPY entrypoint.sh / COPY etc/mini-api.yaml 都是相对仓库根的路径。

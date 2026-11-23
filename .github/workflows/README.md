@@ -70,14 +70,14 @@ deploy (self-hosted runner on ECS)
 
 ## 镜像 tag 约定
 
-镜像全名 = `${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}/${IMAGE_NAME}:<tag>`。
+镜像全名 = `${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:${IMAGE_NAME}-<version>`。
 
 | Tag | 类型 | 用途 |
 |-----|------|------|
-| `${IMAGE_NAME}:<sha7>` | immutable | 精确版本,由 build job 打 |
-| `${IMAGE_NAME}:server-latest` | mutable 指针 | deploy job 拉这个,compose 的 `image:` 也指向它 |
+| `${IMAGE_NAME}-<sha7>` | immutable | 精确版本,由 build job 打 |
+| `${IMAGE_NAME}-latest` | mutable 指针 | deploy job 拉这个,compose 的 `image:` 也指向它 |
 
-compose 的 `image:` 由 `${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}/${IMAGE_NAME}:server-latest` 拼出
+compose 的 `image:` 由 `${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}:${IMAGE_NAME}-latest` 拼出
 (没配 ACR 时退化成裸名,本地构建用)。两个 tag 都在仓库里直接存在,ECS 上不需要再 re-tag。
 
 ## 仓库端点
