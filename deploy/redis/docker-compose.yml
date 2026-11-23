@@ -11,6 +11,16 @@
 # data-net 是外部网络 —— 多个项目可以接入同一张网络互相访问，
 # 端口不用暴露到宿主。需要先存在:
 #   docker network create data-net
+#
+# 多个项目共用这一个 Redis 实例，靠 **DB 号**隔离（不是 key 前缀）:
+#
+#   DB 0 → local-life-api / chatroom（运行时）
+#   DB 1、2 → 预留
+#   DB 3 → short-url
+#   DB 15 → chatroom 的测试（pkg/testutil/redis.go 写死的）
+#
+# 注意:DB 号隔离只在**单机**模式下有效。这台是单机 redis-server,
+# 所以 DB 1~15 都可用。改成集群模式的话所有 DB 会合并成 DB 0,隔离失效。
 
 name: redis
 
@@ -21,7 +31,10 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "127.0.0.1:6379:6379"    # 只允许本机访问
+      # 只允许本机访问。宿主端口可改 —— 宿主上已经有别的 Redis 占了 6379
+      # （/usr/bin/redis-server），所以映射到 16385（见 .env 的 REDIS_HOST_PORT）。
+      # 容器内还是 6379：容器之间一律用 redis:6379 访问，不受宿主端口影响。
+      - "127.0.0.1:${REDIS_HOST_PORT:-16385}:6379"
     volumes:
       - redis-data:/data
     # shell -c 包装，让 ${REDIS_PASSWORD} 在容器启动时展开
