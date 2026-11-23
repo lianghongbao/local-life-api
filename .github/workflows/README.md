@@ -74,7 +74,7 @@ deploy (self-hosted runner on ECS)
 
 | Tag | 类型 | 用途 |
 |-----|------|------|
-| `${IMAGE_NAME}-<sha7>` | immutable | 精确版本,由 build job 打 |
+| `${IMAGE_NAME}:<sha7>` | immutable | 精确版本,由 build job 打 |
 | `${IMAGE_NAME}:server-latest` | mutable 指针 | deploy job 拉这个,compose 的 `image:` 也指向它 |
 
 compose 的 `image:` 由 `${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}/${IMAGE_NAME}:server-latest` 拼出

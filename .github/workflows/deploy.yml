@@ -57,7 +57,7 @@ jobs:
           GOLANG_IMAGE="${REGISTRY}:${BASE_GOLANG_TAG}"
           ALPINE_IMAGE="${REGISTRY}:${BASE_ALPINE_TAG}"
 
-          IMAGE="${REGISTRY}/${{ steps.meta.outputs.image_tag }}"
+          IMAGE="${REGISTRY}/${IMAGE_NAME}:${{ steps.meta.outputs.image_tag }}"
           LATEST="${REGISTRY}/${IMAGE_NAME}:server-latest"
 
           # 清老 cache metadata,防止遗留 --mount=type=cache 元数据报错
