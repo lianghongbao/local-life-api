@@ -77,8 +77,8 @@ deploy (self-hosted runner on ECS)
 | `${IMAGE_NAME}-<sha7>` | immutable | 精确版本,由 build job 打 |
 | `${IMAGE_NAME}:server-latest` | mutable 指针 | deploy job 拉这个,compose 的 `image:` 也指向它 |
 
-compose 的 `image:` 由 `${IMAGE_REGISTRY}/${IMAGE_NAME}:server-latest` 拼出(`IMAGE_REGISTRY`
-为空时退化成裸名,本地构建用)。两个 tag 都在仓库里直接存在,ECS 上不需要再 re-tag。
+compose 的 `image:` 由 `${ACR_REGISTRY_HOST}/${ACR_NAMESPACE}/${IMAGE_NAME}:server-latest` 拼出
+(没配 ACR 时退化成裸名,本地构建用)。两个 tag 都在仓库里直接存在,ECS 上不需要再 re-tag。
 
 ## 仓库端点
 
