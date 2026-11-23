@@ -513,7 +513,7 @@ data-net（外部网络）
 
 ```bash
 # 多阶段构建,产物在 bin/
-docker build -t local-life-api:server-latest .
+docker build -t local-life-api-latest .
 
 # 或本地构建 + docker load(更省网络)
 CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/local-life-api .
